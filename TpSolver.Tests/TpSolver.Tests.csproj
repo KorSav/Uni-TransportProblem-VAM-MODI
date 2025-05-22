@@ -19,7 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\VamLib\VamLib.csproj" />
+    <ProjectReference Include="..\TpSolver\TpSolver.csproj" />
   </ItemGroup>
 
 </Project>

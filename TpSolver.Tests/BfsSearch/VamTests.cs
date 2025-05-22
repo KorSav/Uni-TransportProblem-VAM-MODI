@@ -1,6 +1,8 @@
-﻿namespace VamLib.Tests;
+﻿using TpSolver.BfsSearch;
 
-public class VamSolverTests
+namespace TpSolver.Tests.BfsSearch;
+
+public class VamTests
 {
     [Fact]
     public void Solve_ShouldAllocateCorrectly_WhenSimpleInputProvided()
