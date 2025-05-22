@@ -26,4 +26,29 @@ public class VamSolverTests
         int[,] actual = vam.Solve();
         Assert.Equal(expected, actual);
     }
+
+    [Fact]
+    public void Solve_ShouldAllocateCorrectly_WhenDegeneracyOccurs()
+    {
+        double[,] cost =
+        {
+            { 3, 1, 10 },
+            { 2, 1, 10 },
+            { 10, 10, 2 },
+        };
+
+        int[] supply = [10, 10, 10];
+        int[] demand = [10, 10, 10];
+
+        int[,] expected =
+        {
+            { 0, 10, 0 },
+            { 10, 0, 0 },
+            { 0, 0, 10 },
+        };
+
+        var vam = new Vam(cost, supply, demand);
+        int[,] actual = vam.Solve();
+        Assert.Equal(expected, actual);
+    }
 }

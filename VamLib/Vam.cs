@@ -36,53 +36,57 @@ public class Vam
     {
         while (!AllDone())
         {
-            // Compute penalties
-            rowPenalty = new double[m];
-            colPenalty = new double[n];
-            double maxPenalty = -1;
-            long idx = -1; // for m + n not to cause overflow
-
-            for (int i = 0; i < m; i++)
+            int idx = ArgmaxPenalty(out bool isRow);
+            (int i_min, int j_min) = isRow switch
             {
-                if (rowDone[i])
-                    continue;
-                rowPenalty[i] = CalcRowPenalty(i);
-                Debug.Assert(rowPenalty[i] >= 0);
-                if (rowPenalty[i] > maxPenalty)
-                {
-                    maxPenalty = rowPenalty[i];
-                    idx = i;
-                }
-            }
-
-            for (int j = 0; j < n; j++)
-            {
-                if (colDone[j])
-                    continue;
-                colPenalty[j] = CalcColPenalty(j);
-                Debug.Assert(colPenalty[j] >= 0);
-                if (colPenalty[j] > maxPenalty)
-                {
-                    maxPenalty = colPenalty[j];
-                    idx = m + j;
-                }
-            }
-
-            Debug.Assert(maxPenalty != 0);
-
-            // Find minimum cost cell in selected row/col
-            (int i_min, int j_min) = (idx < m) switch
-            {
-                true => ArgminRowCost((int)idx),
-                false => ArgminColCost((int)(idx - m)),
+                true => ArgminRowCost(idx),
+                false => ArgminColCost(idx),
             };
-
-            // Allocate
             MaxPossibleAllocate(i_min, j_min);
             rowDone[i_min] = supply[i_min] == 0;
             colDone[j_min] = demand[j_min] == 0;
         }
         return allocation;
+    }
+
+    private int ArgmaxPenalty(out bool isRow)
+    {
+        double maxPenalty = -1;
+        long idx = -1; // for m + n not to cause overflow
+
+        for (int i = 0; i < m; i++)
+        {
+            if (rowDone[i])
+                continue;
+            rowPenalty[i] = CalcRowPenalty(i);
+            Debug.Assert(rowPenalty[i] >= 0);
+            if (rowPenalty[i] > maxPenalty)
+            {
+                maxPenalty = rowPenalty[i];
+                idx = i;
+            }
+        }
+
+        for (int j = 0; j < n; j++)
+        {
+            if (colDone[j])
+                continue;
+            colPenalty[j] = CalcColPenalty(j);
+            Debug.Assert(colPenalty[j] >= 0);
+            if (colPenalty[j] > maxPenalty)
+            {
+                maxPenalty = colPenalty[j];
+                idx = m + j;
+            }
+        }
+        Debug.Assert(maxPenalty > 0);
+
+        isRow = idx < m;
+        return isRow switch
+        {
+            true => (int)idx,
+            false => (int)(idx - m),
+        };
     }
 
     private bool AllDone() =>
@@ -103,7 +107,9 @@ public class Vam
         int res_j = -1;
         for (int i = 0; i < m; i++)
         {
-            if (!rowDone[i] && cost[i, j] < minCost)
+            if (rowDone[i])
+                continue;
+            if (cost[i, j] < minCost)
             {
                 minCost = cost[i, j];
                 res_i = i;
@@ -160,11 +166,12 @@ public class Vam
         return CalcPenalty(min1, min2);
     }
 
-    private static double CalcPenalty(double min1, double min2)
+    private double CalcPenalty(double min1, double min2)
     {
         Debug.Assert(min1 <= min2);
-        if (min1 == double.PositiveInfinity && min2 == double.PositiveInfinity)
-            return double.NaN; // will throw debug assertion error (check if this even possible)
+        Debug.Assert(!(min1 == double.PositiveInfinity && min2 == double.PositiveInfinity)); // should not happen, because row/col is not done yet
+        // => the one should have undone cells in it
+
         if (min2 == double.PositiveInfinity)
             return min1;
         return min2 - min1;
