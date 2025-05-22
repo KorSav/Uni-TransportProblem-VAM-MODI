@@ -162,7 +162,7 @@ public class Vam
 
     private static double CalcPenalty(double min1, double min2)
     {
-        Debug.Assert(min1 < min2);
+        Debug.Assert(min1 <= min2);
         if (min1 == double.PositiveInfinity && min2 == double.PositiveInfinity)
             return double.NaN; // will throw debug assertion error (check if this even possible)
         if (min2 == double.PositiveInfinity)
