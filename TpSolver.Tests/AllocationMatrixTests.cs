@@ -39,7 +39,7 @@ public class AllocationMatrixTests
                 { 0, 4, 0, 5 },
             }
         );
-        long bc = am.CountBasic();
+        int bc = am.CountBasic();
         Assert.Equal(5, bc);
 
         am[0, 3] = am[0, 3].AsBasic();

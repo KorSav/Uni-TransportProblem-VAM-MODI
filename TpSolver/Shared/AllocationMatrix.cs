@@ -30,9 +30,9 @@ public class AllocationMatrix
         set => allocations[pnt.i, pnt.j] = value;
     }
 
-    public long CountBasic()
+    public int CountBasic()
     {
-        long counter = 0;
+        int counter = 0;
         for (int i = 0; i < NRows; i++)
         for (int j = 0; j < NCols; j++)
             if (allocations[i, j].IsBasic)

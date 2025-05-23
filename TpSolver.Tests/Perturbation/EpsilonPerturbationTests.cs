@@ -31,13 +31,13 @@ public class EpsilonPerturbationTests
 
         EpsilonPerturbation ep = new(am, cost);
 
-        int basicCnt = (int)am.CountBasic();
+        int basicCnt = am.CountBasic();
         Assert.Equal(4, basicCnt);
         int missing = am.NRows + am.NCols - 1 - basicCnt;
         bool result = ep.TryPerturb(missing);
         Assert.True(result);
 
-        basicCnt = (int)am.CountBasic();
+        basicCnt = am.CountBasic();
         Assert.Equal(6, basicCnt);
         Assert.Equal(expected.AsEnumerableNBDistinct(), am.AsEnumerableNBDistinct());
     }
