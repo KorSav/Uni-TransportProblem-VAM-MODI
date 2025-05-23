@@ -33,7 +33,7 @@ public class Vam
         colDone = new bool[n];
     }
 
-    public AllocationMatrix Solve()
+    public AllocationMatrix Search()
     {
         while (!AllDone())
         {

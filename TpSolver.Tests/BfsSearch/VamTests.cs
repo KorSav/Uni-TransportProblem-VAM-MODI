@@ -7,7 +7,7 @@ namespace TpSolver.Tests.BfsSearch;
 public class VamTests
 {
     [Fact]
-    public void Solve_ShouldAllocateCorrectly_WhenSimpleInputProvided()
+    public void Search_ShouldAllocateCorrectly_WhenSimpleInputProvided()
     {
         double[,] cost =
         {
@@ -27,12 +27,12 @@ public class VamTests
         };
 
         var vam = new Vam(cost, supply, demand);
-        AllocationMatrix actual = vam.Solve();
+        AllocationMatrix actual = vam.Search();
         Assert.Equal(expected.AsEnumerable(), actual.AsEnumerable());
     }
 
     [Fact]
-    public void Solve_ShouldAllocateCorrectly_WhenDegeneracyOccurs()
+    public void Search_ShouldAllocateCorrectly_WhenDegeneracyOccurs()
     {
         double[,] cost =
         {
@@ -52,7 +52,7 @@ public class VamTests
         };
 
         var vam = new Vam(cost, supply, demand);
-        AllocationMatrix actual = vam.Solve();
+        AllocationMatrix actual = vam.Search();
         Assert.Equal(expected.AsEnumerable(), actual.AsEnumerable());
     }
 }
