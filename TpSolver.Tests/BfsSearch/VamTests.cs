@@ -1,5 +1,6 @@
 ﻿using TpSolver.BfsSearch;
 using TpSolver.Shared;
+using TpSolver.Tests.Utils;
 
 namespace TpSolver.Tests.BfsSearch;
 
