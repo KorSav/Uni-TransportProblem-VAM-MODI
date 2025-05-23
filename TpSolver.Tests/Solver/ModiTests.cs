@@ -1,5 +1,7 @@
 using TpSolver.Shared;
+using TpSolver.Solver;
 using TpSolver.Solver.Modi;
+using TpSolver.Tests.Utils;
 
 namespace TpSolver.Tests.Solver;
 
@@ -65,5 +67,63 @@ public class ModiTests
 
         Assert.Equal(RExpected, RPotential);
         Assert.Equal(CExpected, CPotential);
+    }
+
+    [Fact]
+    public void Solve_ShouldFindOptimum_WhenNoCycleIsTaken()
+    {
+        double[,] cost =
+        {
+            { 1, 1, 9, 9 },
+            { 9, 2, 2, 9 },
+            { 9, 9, 3, 3 },
+            { 9, 9, 9, 4 },
+        };
+        int[] supply = [10, 10, 10, 5];
+        int[] demand = [5, 10, 10, 10];
+
+        AllocationMatrix expected = new(
+            new int[,]
+            {
+                { 5, 5, 0, 0 },
+                { 0, 5, 5, 0 },
+                { 0, 0, 5, 5 },
+                { 0, 0, 0, 5 },
+            }
+        );
+
+        ModiSolver ms = new(cost, supply, demand);
+        AllocationMatrix? actual = ms.Solve();
+        Assert.NotNull(actual);
+        Assert.Equal(expected.AsEnumerableNBDistinct(), actual.AsEnumerableNBDistinct());
+    }
+
+    [Fact]
+    public void Solve_ShouldFindOptimum_WhenDegenerousProblem_NoCycle()
+    {
+        double[,] cost =
+        {
+            { 1, 9, 9, 9 },
+            { 9, 2, 9, 9 },
+            { 9, 9, 3, 9 },
+            { 9, 9, 9, 4 },
+        };
+        int[] supply = [10, 10, 10, 10];
+        int[] demand = [10, 10, 10, 10];
+
+        AllocationMatrix expected = new(
+            new int[,]
+            {
+                { 10, 0, 0, 0 },
+                { 0, 10, 0, 0 },
+                { 0, 0, 10, 0 },
+                { 0, 0, 0, 10 },
+            }
+        );
+
+        ModiSolver ms = new(cost, supply, demand);
+        AllocationMatrix? actual = ms.Solve();
+        Assert.NotNull(actual);
+        Assert.Equal(expected.AsEnumerable(), actual.AsEnumerable());
     }
 }

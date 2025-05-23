@@ -28,15 +28,34 @@ public class ModiSolver(double[,] cost, int[] supply, int[] demand)
             if (!perturbation.TryPerturb(perturbCount))
                 return null;
         }
-        bool isOptimal = false;
         PotentialsCalculator pc = new(cost, sln, RPotential, CPotential);
         do
         {
             pc.CalcPotentials();
-            // if optimal - done
-            // find min
-            // cycle
-        } while (!isOptimal);
+            Point pnt_min = ArgminNonBasicCostDiffPotential();
+            if (cost[pnt_min.i, pnt_min.j] >= 0)
+                break; // sln is optimal
+            // find cycle
+            // find min value to remove
+            // pivot
+        } while (true);
         return sln;
+    }
+
+    private Point ArgminNonBasicCostDiffPotential()
+    {
+        double min = double.PositiveInfinity;
+        Point pnt = new(-1, -1);
+        for (int i = 0; i < m; i++)
+        for (int j = 0; j < n; j++)
+        {
+            double costDiffPotential = cost[i, j] - RPotential[i] - CPotential[j];
+            if (!sln[i, j].IsBasic && costDiffPotential < min)
+            {
+                min = costDiffPotential;
+                pnt = new(i, j);
+            }
+        }
+        return pnt;
     }
 }
