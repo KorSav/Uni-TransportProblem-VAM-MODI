@@ -3,7 +3,7 @@ using TpSolver.Shared;
 
 namespace TpSolver.Perturbation;
 
-class EpsilonPerturbation
+public class EpsilonPerturbation
 {
     private readonly AllocationMatrix allocation;
     private readonly double[,] cost;
