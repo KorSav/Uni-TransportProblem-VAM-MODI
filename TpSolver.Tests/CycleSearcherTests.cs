@@ -13,11 +13,11 @@ public class CycleSearcherTests
             { 0, 7, 10, 0 },
             { 10, 1, 0, 0 },
         };
-        int i = 2;
-        int j = 3;
+        Point pnt = new(2, 3);
+
         CycleSearcher cs = new(allocations);
-        List<Point>? actual = cs.SearchClosed(i, j);
-        List<Point> expected = new(4) { new(i, j) };
+        List<Point>? actual = cs.SearchClosed(pnt);
+        List<Point> expected = new(4) { pnt };
         Assert.NotNull(actual);
         expected.AddRange(
             (actual[1] == new Point(2, 1)) switch
@@ -38,10 +38,10 @@ public class CycleSearcherTests
             { 0, 1, 0, 0 },
             { 1, 0, 0, 1 },
         };
-        int i = 2;
-        int j = 1;
+        Point pnt = new(2, 1);
+
         CycleSearcher cs = new(allocations);
-        List<Point>? actual = cs.SearchClosed(i, j);
+        List<Point>? actual = cs.SearchClosed(pnt);
         Assert.Null(actual);
     }
 
@@ -54,11 +54,11 @@ public class CycleSearcherTests
             { 0, 7, 10, 0 },
             { 10, 1, 0, 0 },
         };
-        int i = 1;
-        int j = 0;
+        Point pnt = new(1, 0);
+
         CycleSearcher cs = new(allocations);
-        List<Point>? actual = cs.SearchClosed(i, j);
-        List<Point> expected = new(4) { new(i, j) };
+        List<Point>? actual = cs.SearchClosed(pnt);
+        List<Point> expected = new(4) { pnt };
         Assert.NotNull(actual);
         expected.AddRange(
             (actual[1] == new Point(2, 0)) switch
@@ -70,10 +70,9 @@ public class CycleSearcherTests
         Assert.Equal(expected, actual);
 
         expected.Clear();
-        i = 0;
-        j = 2;
-        actual = cs.SearchClosed(i, j);
-        expected.Add(new(i, j));
+        pnt = new(0, 2);
+        actual = cs.SearchClosed(pnt);
+        expected.Add(pnt);
         Assert.NotNull(actual);
         expected.AddRange(
             (actual[1] == new Point(0, 1)) switch

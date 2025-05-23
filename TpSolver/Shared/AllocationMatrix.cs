@@ -23,4 +23,21 @@ public class AllocationMatrix
         get => allocations[i, j];
         set => allocations[i, j] = value;
     }
+
+    internal Allocation this[Point pnt]
+    {
+        get => allocations[pnt.i, pnt.j];
+        set => allocations[pnt.i, pnt.j] = value;
+    }
+
+    public long CountBasic()
+    {
+        long counter = 0;
+        for (int i = 0; i < NRows; i++)
+        for (int j = 0; j < NCols; j++)
+            if (allocations[i, j].IsBasic)
+                counter++;
+
+        return counter;
+    }
 }

@@ -2,8 +2,6 @@ using System.Diagnostics;
 
 namespace TpSolver.Shared;
 
-record struct Point(int i, int j);
-
 class CycleSearcher
 {
     private readonly AllocationMatrix allocation;
@@ -21,22 +19,21 @@ class CycleSearcher
     public CycleSearcher(int[,] allocation)
         : this(new AllocationMatrix(allocation)) { }
 
-    public List<Point>? SearchClosed(int i, int j)
+    public List<Point>? SearchClosed(Point pnt)
     {
         // Can search only from non basic cell
-        Debug.Assert(!allocation[i, j].IsBasic);
+        Debug.Assert(!allocation[pnt].IsBasic);
         List<Point>? cycle;
-        allocation[i, j] = allocation[i, j].AsBasic();
-        cycle = SearchBasic(i, j);
-        allocation[i, j] = new(0);
+        allocation[pnt] = allocation[pnt].AsBasic();
+        cycle = SearchBasic(pnt);
+        allocation[pnt] = new(0);
         return cycle;
     }
 
-    private List<Point>? SearchBasic(int i, int j)
+    private List<Point>? SearchBasic(Point aim)
     {
         MakeAllNonvisited();
         cycle = new(allocation.NRows + allocation.NCols - 1);
-        Point aim = new(i, j);
         Point? next;
         Point cur = aim;
         cycle.Add(cur);
