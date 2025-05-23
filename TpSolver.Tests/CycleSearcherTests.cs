@@ -36,4 +36,44 @@ public class CycleSearcherTests
         List<Point>? actual = cs.SearchClosed(i, j);
         Assert.Null(actual);
     }
+
+    [Fact]
+    public void Search_ShouldFindCycle_WhenCalledMultipleTimes()
+    {
+        int[,] allocations =
+        {
+            { 0, 2, 0, 10 },
+            { 0, 7, 10, 0 },
+            { 10, 1, 0, 0 },
+        };
+        int i = 1;
+        int j = 0;
+        CycleSearcher cs = new(allocations);
+        List<Point>? actual = cs.SearchClosed(i, j);
+        List<Point> expected = new(4) { new(i, j) };
+        Assert.NotNull(actual);
+        expected.AddRange(
+            (actual[1] == new Point(2, 0)) switch
+            {
+                true => [new(2, 0), new(2, 1), new(1, 1)],
+                false => [new(1, 1), new(2, 1), new(2, 0)],
+            }
+        );
+        Assert.Equal(expected, actual);
+
+        expected.Clear();
+        i = 0;
+        j = 2;
+        actual = cs.SearchClosed(i, j);
+        expected.Add(new(i, j));
+        Assert.NotNull(actual);
+        expected.AddRange(
+            (actual[1] == new Point(0, 1)) switch
+            {
+                true => [new(0, 1), new(1, 1), new(1, 2)],
+                false => [new(1, 2), new(1, 1), new(0, 1)],
+            }
+        );
+        Assert.Equal(expected, actual);
+    }
 }

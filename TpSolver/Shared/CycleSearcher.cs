@@ -9,7 +9,7 @@ class CycleSearcher
     private readonly int[,] allocations;
     private readonly int m;
     private readonly int n;
-    private bool[,] visited;
+    private readonly bool[,] visited;
     private List<Point> cycle = null!;
 
     private enum Move { }
@@ -36,6 +36,7 @@ class CycleSearcher
 
     private List<Point>? SearchBasic(int i, int j)
     {
+        MakeAllNonvisited();
         cycle = new(m + n - 1);
         Point aim = new(i, j);
         Point? next;
@@ -56,6 +57,15 @@ class CycleSearcher
             cycle.Add(cur);
         }
         return cycle;
+    }
+
+    private void MakeAllNonvisited()
+    {
+        for (int i = 0; i < visited.GetLength(0); i++)
+        for (int j = 0; j < visited.GetLength(1); j++)
+        {
+            visited[i, j] = false;
+        }
     }
 
     private Point? GetNewAdjacent()
