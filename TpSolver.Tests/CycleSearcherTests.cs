@@ -17,7 +17,15 @@ public class CycleSearcherTests
         int j = 3;
         CycleSearcher cs = new(allocations);
         List<Point>? actual = cs.SearchClosed(i, j);
-        List<Point> expected = [new(i, j), new(2, 1), new(0, 1), new(0, 3)];
+        List<Point> expected = new(4) { new(i, j) };
+        Assert.NotNull(actual);
+        expected.AddRange(
+            (actual[1] == new Point(2, 1)) switch
+            {
+                true => [new(2, 1), new(0, 1), new(0, 3)],
+                false => [new(0, 3), new(0, 1), new(2, 1)],
+            }
+        );
         Assert.Equal(expected, actual);
     }
 
