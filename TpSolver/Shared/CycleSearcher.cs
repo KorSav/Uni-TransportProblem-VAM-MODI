@@ -6,38 +6,36 @@ record struct Point(int i, int j);
 
 class CycleSearcher
 {
-    private readonly int[,] allocations;
-    private readonly int m;
-    private readonly int n;
+    private readonly AllocationMatrix allocation;
     private readonly bool[,] visited;
     private List<Point> cycle = null!;
 
     private enum Move { }
 
-    public CycleSearcher(int[,] allocations)
+    public CycleSearcher(AllocationMatrix allocation)
     {
-        this.allocations = allocations;
-        m = allocations.GetLength(0);
-        n = allocations.GetLength(1);
-        visited = new bool[m, n];
+        this.allocation = allocation;
+        visited = new bool[allocation.NRows, allocation.NCols];
     }
+
+    public CycleSearcher(int[,] allocation)
+        : this(new AllocationMatrix(allocation)) { }
 
     public List<Point>? SearchClosed(int i, int j)
     {
         // Can search only from non basic cell
-        Debug.Assert(allocations[i, j] == 0);
+        Debug.Assert(!allocation[i, j].IsBasic);
         List<Point>? cycle;
-        // Make point basic and try to find cycle of all basic cells
-        allocations[i, j] = int.MaxValue;
+        allocation[i, j] = allocation[i, j].AsBasic();
         cycle = SearchBasic(i, j);
-        allocations[i, j] = 0;
+        allocation[i, j] = new(0);
         return cycle;
     }
 
     private List<Point>? SearchBasic(int i, int j)
     {
         MakeAllNonvisited();
-        cycle = new(m + n - 1);
+        cycle = new(allocation.NRows + allocation.NCols - 1);
         Point aim = new(i, j);
         Point? next;
         Point cur = aim;
@@ -84,22 +82,17 @@ class CycleSearcher
 
     private Point? GetNonVisitedInRow(int i, int filter)
     {
-        for (int j = 0; j < n; j++)
-            if (IsBasicNonVisited(i, j) && j != filter)
+        for (int j = 0; j < allocation.NCols; j++)
+            if (allocation[i, j].IsBasic && !visited[i, j] && j != filter)
                 return new(i, j);
         return null;
     }
 
     private Point? GetNonVisitedInColumn(int j, int filter)
     {
-        for (int i = 0; i < m; i++)
-            if (IsBasicNonVisited(i, j) && i != filter)
+        for (int i = 0; i < allocation.NRows; i++)
+            if (allocation[i, j].IsBasic && !visited[i, j] && i != filter)
                 return new(i, j);
         return null;
-    }
-
-    private bool IsBasicNonVisited(int i, int j)
-    {
-        return allocations[i, j] != 0 && !visited[i, j];
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using TpSolver.Shared;
 
 namespace TpSolver.BfsSearch;
 
@@ -8,7 +9,7 @@ public class Vam
     double[] colPenalty;
     int m;
     int n;
-    int[,] allocation;
+    AllocationMatrix allocation;
     bool[] rowDone;
     bool[] colDone;
     double[,] cost;
@@ -23,7 +24,7 @@ public class Vam
 
         m = supply.Length;
         n = demand.Length;
-        allocation = new int[m, n];
+        allocation = new(new int[m, n]);
 
         rowPenalty = new double[m];
         rowDone = new bool[m];
@@ -32,7 +33,7 @@ public class Vam
         colDone = new bool[n];
     }
 
-    public int[,] Solve()
+    public AllocationMatrix Solve()
     {
         while (!AllDone())
         {
@@ -95,7 +96,7 @@ public class Vam
     private void MaxPossibleAllocate(int i_min, int j_min)
     {
         int quantity = Math.Min(supply[i_min], demand[j_min]);
-        allocation[i_min, j_min] = quantity;
+        allocation[i_min, j_min] = new(quantity);
         supply[i_min] -= quantity;
         demand[j_min] -= quantity;
     }

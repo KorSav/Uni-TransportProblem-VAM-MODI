@@ -1,4 +1,5 @@
 ﻿using TpSolver.BfsSearch;
+using TpSolver.Shared;
 
 namespace TpSolver.Tests.BfsSearch;
 
@@ -25,8 +26,8 @@ public class VamTests
         };
 
         var vam = new Vam(cost, supply, demand);
-        int[,] actual = vam.Solve();
-        Assert.Equal(expected, actual);
+        AllocationMatrix actual = vam.Solve();
+        Assert.Equal(expected.AsEnumerable(), actual.AsEnumerable());
     }
 
     [Fact]
@@ -50,7 +51,7 @@ public class VamTests
         };
 
         var vam = new Vam(cost, supply, demand);
-        int[,] actual = vam.Solve();
-        Assert.Equal(expected, actual);
+        AllocationMatrix actual = vam.Solve();
+        Assert.Equal(expected.AsEnumerable(), actual.AsEnumerable());
     }
 }
