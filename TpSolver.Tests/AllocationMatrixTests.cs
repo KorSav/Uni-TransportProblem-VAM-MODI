@@ -21,7 +21,7 @@ public class AllocationMatrixTests
 
         Assert.Equal(0, am[i, j]);
         Assert.False(am[i, j].IsBasic);
-        am[i, j] = am[i, j].AsBasic();
+        am[i, j] = am[i, j].ToBasic();
 
         Assert.Equal(0, am[i, j]);
         Assert.True(am[i, j].IsBasic);
@@ -42,7 +42,7 @@ public class AllocationMatrixTests
         int bc = am.CountBasic();
         Assert.Equal(5, bc);
 
-        am[0, 3] = am[0, 3].AsBasic();
+        am[0, 3] = am[0, 3].ToBasic();
         bc = am.CountBasic();
         Assert.Equal(6, bc);
     }

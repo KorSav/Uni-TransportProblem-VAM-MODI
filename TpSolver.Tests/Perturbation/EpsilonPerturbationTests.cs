@@ -26,8 +26,8 @@ public class EpsilonPerturbationTests
         int[,] copy = new int[am.NRows, am.NCols];
         Array.Copy(allocations, copy, allocations.Length);
         AllocationMatrix expected = new(copy);
-        expected[0, 1] = expected[0, 1].AsBasic();
-        expected[1, 3] = expected[1, 3].AsBasic();
+        expected[0, 1] = expected[0, 1].ToBasic();
+        expected[1, 3] = expected[1, 3].ToBasic();
 
         EpsilonPerturbation ep = new(am, cost);
 

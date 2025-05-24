@@ -2,6 +2,8 @@ namespace TpSolver.Shared;
 
 public class AllocationMatrix
 {
+    // Simply use int? instead of custom struct results in 2x memory occupation
+    // And arithmetic will be forced to use '?? 0'
     readonly AllocationValue[,] allocations;
     public int NRows { get; }
     public int NCols { get; }

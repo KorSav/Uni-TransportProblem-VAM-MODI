@@ -36,7 +36,7 @@ public class EpsilonPerturbation
 
                 cycle = cs.SearchClosed(pntMin.Value);
             } while (cycle is not null);
-            allocation[pntMin.Value] = allocation[pntMin.Value].AsBasic();
+            allocation[pntMin.Value] = allocation[pntMin.Value].ToBasic();
         }
         return true;
     }

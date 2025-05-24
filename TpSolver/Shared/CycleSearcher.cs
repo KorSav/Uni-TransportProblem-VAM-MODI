@@ -24,7 +24,7 @@ class CycleSearcher
         // Can search only from non basic cell
         Debug.Assert(!allocation[pnt].IsBasic);
         List<Point>? cycle;
-        allocation[pnt] = allocation[pnt].AsBasic();
+        allocation[pnt] = allocation[pnt].ToBasic();
         cycle = SearchBasic(pnt);
         allocation[pnt] = new(0);
         return cycle;

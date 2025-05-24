@@ -1,40 +1,60 @@
 namespace TpSolver.Shared;
 
 /// <summary>
-/// Encapsulates a non-negative allocation value,
-/// additionally storing whether the value is basic or not.
-/// <para>
-/// Allows any value to be made basic via <see cref="AsBasic"/>.
-/// </para>
+/// Encapsulates a non-negative allocation value.
 /// </summary>
-public struct AllocationValue
+/// <remarks>
+/// The default value is a <b>non-basic zero</b>. To make it basic use <see cref="ToBasic"/>
+/// </remarks>
+public readonly struct AllocationValue
 {
-    const int emptyValue = -1;
-    int value;
+    // Range: {nbZero, bZero, 1, 2, ..., int.MaxValue}
+    // By default should be non basic zero
+    // Forced to choose this value, because CLR by default sets all fields to 0 (even if parameterless ctor is called)
+    const int nbZero = 0;
+    const int bZero = -1;
+    readonly int value = 0; // default is always 0, despite what is written here
 
-    public readonly bool IsBasic => value != emptyValue;
+    public readonly bool IsBasic => value != nbZero;
 
     /// <summary>
-    /// Makes Allocation to be basic, despite its current value
+    /// Makes zero allocation to be basic, while converting to int gives 0.
     /// </summary>
+    /// <remarks>
+    /// Converting to <see cref="int"/> and then back to <see cref="AllocationValue"/>
+    /// will wipe out information about zero basic
+    /// </remarks>
     /// <returns>Modified struct</returns>
-    public AllocationValue AsBasic()
+    public readonly AllocationValue ToBasic() => new(IsBasic ? value : bZero, true);
+
+    private AllocationValue(int raw, bool _)
     {
-        value = IsBasic ? value : 0;
-        return this;
+        value = raw;
     }
 
     /// <summary>
-    /// By default all positive values - basic, if zero - non basic
+    /// Initializes a new instance of the <see cref="AllocationValue"/> struct
+    /// with the specified non-negative value.
     /// </summary>
-    /// <param name="value">Non negative allocation amount</param>
-    /// <exception cref="ArgumentException">If negative <paramref name="value"/> was given</exception>
-    public AllocationValue(int value = 0)
+    /// <param name="value">Allocation amount ≥ 0. Zero is treated as non-basic.</param>
+    /// <exception cref="ArgumentException">Thrown if <paramref name="value"/> is negative.</exception>
+    public AllocationValue(int value)
     {
         if (value < 0)
             throw new ArgumentException($"Allocation can not be negative, but got {value}");
-        this.value = (value == 0) ? emptyValue : value;
+        this.value = (value == 0) ? nbZero : value;
     }
 
-    public static implicit operator int(AllocationValue a) => (a.value == emptyValue) ? 0 : a.value;
+    public static implicit operator int(AllocationValue a) =>
+        a.value switch
+        {
+            nbZero or bZero => 0,
+            _ => a.value,
+        };
+
+    public static AllocationValue operator +(AllocationValue a, AllocationValue b) =>
+        new((int)a + b);
+
+    public static AllocationValue operator -(AllocationValue a, AllocationValue b) =>
+        new((int)a - b);
 }
