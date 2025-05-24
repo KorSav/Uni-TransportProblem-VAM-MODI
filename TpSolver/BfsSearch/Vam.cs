@@ -43,17 +43,29 @@ public class Vam
 
     public AllocationMatrix Search()
     {
-        while (!AllDone())
+        int doneCount = 0;
+        while (doneCount != rowDone.Length + colDone.Length)
         {
             int idx = ArgmaxPenalty(out bool isRow);
-            (int i_min, int j_min) = isRow switch
+            (int i_min, int j_min) = isRow ? ArgminRowCost(idx) : ArgminColCost(idx);
+
+            // Allocate maximally allowed
+            int quantity = Math.Min(supply[i_min], demand[j_min]);
+            allocation[i_min, j_min] = new(quantity);
+            supply[i_min] -= quantity;
+            demand[j_min] -= quantity;
+
+            // Update done lists
+            if (supply[i_min] == 0)
             {
-                true => ArgminRowCost(idx),
-                false => ArgminColCost(idx),
-            };
-            MaxPossibleAllocate(i_min, j_min);
-            rowDone[i_min] = supply[i_min] == 0;
-            colDone[j_min] = demand[j_min] == 0;
+                rowDone[i_min] = true;
+                doneCount++;
+            }
+            if (demand[j_min] == 0)
+            {
+                colDone[j_min] = true;
+                doneCount++;
+            }
         }
         return allocation;
     }
@@ -61,7 +73,7 @@ public class Vam
     private int ArgmaxPenalty(out bool isRow)
     {
         double maxPenalty = -1;
-        long idx = -1; // for m + n not to cause overflow
+        int idx = -1;
 
         for (int i = 0; i < m; i++)
         {
@@ -93,27 +105,15 @@ public class Vam
         isRow = idx < m;
         return isRow switch
         {
-            true => (int)idx,
-            false => (int)(idx - m),
+            true => idx,
+            false => idx - m,
         };
-    }
-
-    private bool AllDone() =>
-        rowDone.All(rowMark => rowMark is true) && colDone.All(colMark => colMark is true);
-
-    private void MaxPossibleAllocate(int i_min, int j_min)
-    {
-        int quantity = Math.Min(supply[i_min], demand[j_min]);
-        allocation[i_min, j_min] = new(quantity);
-        supply[i_min] -= quantity;
-        demand[j_min] -= quantity;
     }
 
     private (int, int) ArgminColCost(int j)
     {
         double minCost = double.PositiveInfinity;
         int res_i = -1;
-        int res_j = -1;
         for (int i = 0; i < m; i++)
         {
             if (rowDone[i])
@@ -122,16 +122,14 @@ public class Vam
             {
                 minCost = cost[i, j];
                 res_i = i;
-                res_j = j;
             }
         }
-        return (res_i, res_j);
+        return (res_i, j);
     }
 
     private (int, int) ArgminRowCost(int i)
     {
         double minCost = double.PositiveInfinity;
-        int res_i = -1;
         int res_j = -1;
         for (int j = 0; j < n; j++)
         {
@@ -140,11 +138,10 @@ public class Vam
             if (cost[i, j] < minCost)
             {
                 minCost = cost[i, j];
-                res_i = i;
                 res_j = j;
             }
         }
-        return (res_i, res_j);
+        return (i, res_j);
     }
 
     private double CalcColPenalty(int j)
