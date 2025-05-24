@@ -16,11 +16,19 @@ public class Vam
     int[] supply; // represented as rows
     int[] demand; // represented as cols
 
-    public Vam(double[,] cost, int[] supply, int[] demand)
+    public Vam(double[,] cost, int[] supply, int[] demand, bool inplace = true)
     {
-        this.cost = cost;
-        this.supply = supply;
-        this.demand = demand;
+        this.cost = cost; // is not modified during search
+        if (inplace)
+        {
+            this.demand = demand;
+            this.supply = supply;
+        }
+        else
+        {
+            this.demand = (int[])demand.Clone();
+            this.supply = (int[])supply.Clone();
+        }
 
         m = supply.Length;
         n = demand.Length;
@@ -80,7 +88,7 @@ public class Vam
                 idx = m + j;
             }
         }
-        Debug.Assert(maxPenalty > 0);
+        Debug.Assert(maxPenalty >= 0); // 0 is possible if one cost remained nondone
 
         isRow = idx < m;
         return isRow switch
@@ -174,7 +182,7 @@ public class Vam
         // => the one should have undone cells in it
 
         if (min2 == double.PositiveInfinity)
-            return min1;
+            return 0; // only one value remained in row/col, no penalty
         return min2 - min1;
     }
 

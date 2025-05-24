@@ -21,8 +21,6 @@ class PotentialsCalculator(
     readonly double[] CPotential = CPotential;
     readonly bool[] CDone = new bool[CPotential.Length];
 
-    readonly List<int> potentialsToCheck = [];
-
     /// <summary>
     /// Starts with RPotential[0] = 0
     /// </summary>
@@ -34,12 +32,13 @@ class PotentialsCalculator(
         for (int j = 0; j < n; j++)
             CDone[j] = false;
 
-        List<int> potentialsToAdd = [];
+        List<int> potentialsToAdd = new(m + n);
         int doneCount = 1;
         RDone[0] = true;
-        potentialsToCheck.Add(0);
+        List<int> potentialsToCheck = new(m + n) { 0 };
         do
         {
+            potentialsToAdd.Clear();
             int count = potentialsToCheck.Count;
             for (int i = 0; i < count; i++)
             {
@@ -50,14 +49,14 @@ class PotentialsCalculator(
                     isRPotential = false;
                     idx -= m;
                 }
-                potentialsToAdd.Clear();
-                potentialsToAdd = isRPotential switch
-                {
-                    true => CalcAllNotCDoneUsing(idx, ref doneCount),
-                    false => CalcAllNotRDoneUsing(idx, ref doneCount),
-                };
-                potentialsToCheck.AddRange(potentialsToAdd);
+                potentialsToAdd.AddRange(
+                    isRPotential
+                        ? CalcAllNotCDoneUsing(idx, ref doneCount)
+                        : CalcAllNotRDoneUsing(idx, ref doneCount)
+                );
             }
+            potentialsToCheck.Clear();
+            potentialsToCheck.AddRange(potentialsToAdd);
         } while (doneCount != RDone.Length + CDone.Length);
     }
 

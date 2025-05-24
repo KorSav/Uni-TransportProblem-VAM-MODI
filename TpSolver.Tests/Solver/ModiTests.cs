@@ -1,3 +1,4 @@
+using TpSolver.BfsSearch;
 using TpSolver.Shared;
 using TpSolver.Solver;
 using TpSolver.Solver.Modi;
@@ -52,12 +53,12 @@ public class ModiTests
         );
         double[,] cost =
         {
-            { 8, 18, 4, 7 },
+            { 8, 13, 4, 7 },
             { 11, 14, 6, 10 },
             { 6, 12, 8, 9 },
         };
-        double[] RExpected = [0, -4, -6];
-        double[] CExpected = [12, 18, 10, 7];
+        double[] RExpected = [0, 1, -1];
+        double[] CExpected = [7, 13, 5, 7];
 
         double[] RPotential = new double[3];
         double[] CPotential = new double[4];
@@ -93,7 +94,7 @@ public class ModiTests
         );
 
         ModiSolver ms = new(cost, supply, demand);
-        AllocationMatrix? actual = ms.Solve();
+        AllocationMatrix? actual = ms.Solve(out _);
         Assert.NotNull(actual);
         Assert.Equal(expected.AsEnumerableNBDistinct(), actual.AsEnumerableNBDistinct());
     }
@@ -122,8 +123,97 @@ public class ModiTests
         );
 
         ModiSolver ms = new(cost, supply, demand);
-        AllocationMatrix? actual = ms.Solve();
+        AllocationMatrix? actual = ms.Solve(out _);
         Assert.NotNull(actual);
         Assert.Equal(expected.AsEnumerable(), actual.AsEnumerable());
+    }
+
+    [Fact]
+    public void Solve_ShouldFindOptimum_WhenCyclesAreTaken_ExampleFromPaper1()
+    {
+        double[,] cost =
+        {
+            { 8, 13, 4, 7 },
+            { 11, 14, 6, 10 },
+            { 6, 12, 8, 9 },
+        };
+        int[] supply = [12, 17, 11];
+        int[] demand = [10, 10, 10, 10];
+
+        Vam vam = new(cost, supply, demand, inplace: false);
+        AllocationMatrix bfs = vam.Search(); // was considered in previous tests
+
+        ModiSolver ms = new(cost, supply, demand);
+        AllocationMatrix? optimal = ms.Solve(out int cyclesTaken);
+
+        Assert.NotNull(optimal);
+        Assert.Equal(1, cyclesTaken);
+        Assert.True(optimal.CalcTotalCost(cost) < bfs.CalcTotalCost(cost));
+        Assert.Equal(324, optimal.CalcTotalCost(cost));
+    }
+
+    [Fact]
+    public void Solve_ShouldFindOptimum_WhenCyclesAreTaken_ExampleFromPaper2()
+    {
+        double[,] cost =
+        {
+            { 2, 4, 6 },
+            { 3, 8, 7 },
+            { 4, 3, 8 },
+            { 4, 6, 3 },
+            { 2, 6, 5 },
+            { 0, 0, 0 },
+        };
+        int[] supply = [75, 345, 180, 90, 210, 700];
+        int[] demand = [850, 300, 450];
+
+        AllocationMatrix paperResult = new(
+            new int[,]
+            {
+                { 75, 0, 0 },
+                { 345, 0, 0 },
+                { 0, 180, 0 },
+                { 0, 0, 90 },
+                { 210, 0, 0 },
+                { 220, 120, 360 },
+            }
+        );
+
+        ModiSolver ms = new(cost, supply, demand);
+        AllocationMatrix? actual = ms.Solve(out int cyclesTaken);
+
+        Assert.NotNull(actual);
+        Assert.True(cyclesTaken >= 1);
+        Assert.True(actual.CalcTotalCost(cost) <= paperResult.CalcTotalCost(cost));
+        Assert.Equal(paperResult.AsEnumerable(), actual.AsEnumerable());
+    }
+
+    [Theory]
+    [InlineData(10)]
+    [InlineData(50)]
+    [InlineData(100)]
+    public void Solve_ShouldFindCorrectSolution_WhenBigProblem(int size)
+    {
+        double[,] cost = new double[size, size];
+        int[] supply = new int[size];
+        int[] demand = new int[size];
+        Random rnd = new();
+
+        for (int i = 0; i < size; i++)
+        {
+            supply[i] = 1;
+            demand[i] = 1;
+            for (int j = 0; j < size; j++)
+            {
+                cost[i, j] = rnd.Next(1, 200); //Math.Abs(i - j);
+            }
+        }
+
+        ModiSolver ms = new(cost, supply, demand, inplace: false);
+        AllocationMatrix? actual = ms.Solve(out int cyclesTaken);
+        Assert.NotNull(actual); // NOTE: sometimes fails, because impossible to deal with degeneracy
+        Assert.True(cyclesTaken >= 1);
+        Assert.True(AllocationValidation.IsDemandPerColCorrect(actual, demand));
+        Assert.True(AllocationValidation.IsSupplyPerRowCorrect(actual, supply));
     }
 }
