@@ -192,7 +192,47 @@ public class ModiTests
     [InlineData(10)]
     [InlineData(50)]
     [InlineData(100)]
+    [InlineData(200)]
     public void Solve_ShouldFindCorrectSolution_WhenBigProblem(int size)
+    {
+        double[,] cost = new double[size + 1, size + 1];
+        int[] supply = new int[size + 1];
+        int totalSupply = 0;
+        int[] demand = new int[size + 1];
+        int totalDemand = 0;
+        Random rnd = new();
+
+        for (int i = 0; i < size; i++)
+        {
+            supply[i] = rnd.Next(1, 1000);
+            demand[i] = rnd.Next(1, 1000);
+            totalSupply += supply[i];
+            totalDemand += demand[i];
+            for (int j = 0; j < size; j++)
+            {
+                cost[i, j] = rnd.NextDouble() * 50;
+            }
+        }
+        // balance problem
+        if (totalSupply > totalDemand) // need dummy destination
+            demand[^1] = totalSupply - totalDemand;
+        if (totalDemand > totalSupply) // need dummy supply
+            supply[^1] = totalDemand - totalSupply;
+
+        ModiSolver ms = new(cost, supply, demand, inplace: false);
+        AllocationMatrix? actual = ms.Solve(out int cyclesTaken);
+        Assert.NotNull(actual);
+        Assert.True(cyclesTaken >= 1);
+        Assert.True(AllocationValidation.IsDemandPerColCorrect(actual, demand));
+        Assert.True(AllocationValidation.IsSupplyPerRowCorrect(actual, supply));
+    }
+
+    [Theory]
+    [InlineData(10)]
+    [InlineData(50)]
+    [InlineData(100)]
+    [InlineData(200)]
+    public void Solve_ShouldFindCorrectSolution_WhenBigHighlyDegenerousProblem(int size)
     {
         double[,] cost = new double[size, size];
         int[] supply = new int[size];
@@ -205,13 +245,13 @@ public class ModiTests
             demand[i] = 1;
             for (int j = 0; j < size; j++)
             {
-                cost[i, j] = rnd.Next(1, 200); //Math.Abs(i - j);
+                cost[i, j] = rnd.NextDouble();
             }
         }
 
         ModiSolver ms = new(cost, supply, demand, inplace: false);
         AllocationMatrix? actual = ms.Solve(out int cyclesTaken);
-        Assert.NotNull(actual); // NOTE: sometimes fails, because impossible to deal with degeneracy
+        Assert.NotNull(actual);
         Assert.True(cyclesTaken >= 1);
         Assert.True(AllocationValidation.IsDemandPerColCorrect(actual, demand));
         Assert.True(AllocationValidation.IsSupplyPerRowCorrect(actual, supply));
