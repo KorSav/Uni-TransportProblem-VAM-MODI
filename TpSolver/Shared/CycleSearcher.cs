@@ -67,14 +67,13 @@ class CycleSearcher
     {
         Debug.Assert(cycle.Count != 0);
         Point cur = cycle[^1];
-        if (cycle.Count > 1) // searching adjacent not for initial aim
-            return (cycle[^2].i == cur.i) switch // whether previous was in row
-            {
-                true => GetNonVisitedInColumn(cur.j, filter: cur.i),
-                false => GetNonVisitedInRow(cur.i, filter: cur.j),
-            };
-        return GetNonVisitedInRow(cur.i, filter: cur.j)
-            ?? GetNonVisitedInColumn(cur.j, filter: cur.i);
+        if (cycle.Count == 1) // searching adjacent for starting point
+            return GetNonVisitedInRow(cur.i, filter: cur.j)
+                ?? GetNonVisitedInColumn(cur.j, filter: cur.i);
+
+        if (cycle[^2].i == cur.i) // whether previous was in row
+            return GetNonVisitedInColumn(cur.j, filter: cur.i);
+        return GetNonVisitedInRow(cur.i, filter: cur.j);
     }
 
     private Point? GetNonVisitedInRow(int i, int filter)
