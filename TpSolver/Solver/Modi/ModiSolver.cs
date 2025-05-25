@@ -2,18 +2,17 @@ using System.Diagnostics;
 using TpSolver.BfsSearch;
 using TpSolver.Perturbation;
 using TpSolver.Shared;
-using TpSolver.Solver.Modi;
 
-namespace TpSolver.Solver;
+namespace TpSolver.Solver.Modi;
 
-public class ModiSolver(double[,] cost, int[] supply, int[] demand, bool inplace = true)
+public class ModiSolver(TransportProblem tp)
 {
-    readonly double[,] cost = cost;
-    readonly int m = supply.Length;
-    readonly double[] RPotential = new double[supply.Length];
-    readonly int n = demand.Length;
-    readonly double[] CPotential = new double[demand.Length];
-    readonly Vam bfsSearcher = new(cost, supply, demand, inplace);
+    readonly TransportProblem tp = tp;
+    readonly int m = tp.Supply.Length;
+    readonly double[] RPotential = new double[tp.Supply.Length];
+    readonly int n = tp.Demand.Length;
+    readonly double[] CPotential = new double[tp.Demand.Length];
+    readonly Vam bfsSearcher = new(tp);
     EpsilonPerturbation perturbation = null!;
     AllocationMatrix sln = null!;
 
@@ -25,11 +24,11 @@ public class ModiSolver(double[,] cost, int[] supply, int[] demand, bool inplace
         if (perturbCount > 0)
         {
             // Deal with degeneracy
-            perturbation = new(sln, cost);
+            perturbation = new(sln, tp.Cost);
             if (!perturbation.TryPerturb(perturbCount))
                 return null;
         }
-        PotentialsCalculator pc = new(cost, sln, RPotential, CPotential);
+        PotentialsCalculator pc = new(tp.Cost, sln, RPotential, CPotential);
         CycleSearcher cs = new(sln);
         do
         {
@@ -54,7 +53,7 @@ public class ModiSolver(double[,] cost, int[] supply, int[] demand, bool inplace
         for (int i = 0; i < m; i++)
         for (int j = 0; j < n; j++)
         {
-            double costDiffPotential = cost[i, j] - RPotential[i] - CPotential[j];
+            double costDiffPotential = tp.Cost[i, j] - RPotential[i] - CPotential[j];
             if (!sln[i, j].IsBasic && costDiffPotential < min)
             {
                 min = costDiffPotential;

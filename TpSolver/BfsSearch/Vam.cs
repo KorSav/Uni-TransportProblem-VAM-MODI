@@ -10,25 +10,17 @@ public class Vam
     int m;
     int n;
     AllocationMatrix allocation;
-    bool[] rowDone;
-    bool[] colDone;
-    double[,] cost;
-    int[] supply; // represented as rows
-    int[] demand; // represented as cols
+    bool[] rowDone; // or supply
+    bool[] colDone; // or demand
+    TransportProblem tp;
+    int[] supply; // copies that will be modified
+    int[] demand;
 
-    public Vam(double[,] cost, int[] supply, int[] demand, bool inplace = true)
+    public Vam(TransportProblem tp)
     {
-        this.cost = cost; // is not modified during search
-        if (inplace)
-        {
-            this.demand = demand;
-            this.supply = supply;
-        }
-        else
-        {
-            this.demand = (int[])demand.Clone();
-            this.supply = (int[])supply.Clone();
-        }
+        this.tp = tp;
+        supply = (int[])tp.Supply.Clone();
+        demand = (int[])tp.Demand.Clone();
 
         m = supply.Length;
         n = demand.Length;
@@ -118,9 +110,9 @@ public class Vam
         {
             if (rowDone[i])
                 continue;
-            if (cost[i, j] < minCost)
+            if (tp.Cost[i, j] < minCost)
             {
-                minCost = cost[i, j];
+                minCost = tp.Cost[i, j];
                 res_i = i;
             }
         }
@@ -135,9 +127,9 @@ public class Vam
         {
             if (colDone[j])
                 continue;
-            if (cost[i, j] < minCost)
+            if (tp.Cost[i, j] < minCost)
             {
-                minCost = cost[i, j];
+                minCost = tp.Cost[i, j];
                 res_j = j;
             }
         }
@@ -152,7 +144,7 @@ public class Vam
         {
             if (!rowDone[i])
             {
-                UpdateMins(ref min1, ref min2, cost[i, j]);
+                UpdateMins(ref min1, ref min2, tp.Cost[i, j]);
             }
         }
         return CalcPenalty(min1, min2);
@@ -166,7 +158,7 @@ public class Vam
         {
             if (!colDone[j])
             {
-                UpdateMins(ref min1, ref min2, cost[i, j]);
+                UpdateMins(ref min1, ref min2, tp.Cost[i, j]);
             }
         }
         return CalcPenalty(min1, min2);
