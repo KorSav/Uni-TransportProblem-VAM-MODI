@@ -1,11 +1,13 @@
 ﻿using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using Profiling;
 using TpSolver.Shared;
 
 namespace TpSolver.BfsSearch;
 
-public class Vam
+public class VamParallel
 {
+    const int indexNotSet = -1;
     double[] rowPenalty;
     double[] colPenalty;
     int m;
@@ -16,9 +18,17 @@ public class Vam
     TransportProblem tp;
     int[] supply; // copies that will be modified
     int[] demand;
+    readonly ParallelOptions parOpts;
 
-    public Vam(TransportProblem tp)
+    /// <summary>
+    /// Tries to execute at most <paramref name="parallelizationDegree"/> tasks in parallel.
+    /// <para>
+    /// Int.Max removes limit.
+    /// </para>
+    /// </summary>
+    public VamParallel(TransportProblem tp, ParallelOptions parallelOptions)
     {
+        parOpts = parallelOptions;
         this.tp = tp;
         supply = (int[])tp.Supply.Clone();
         demand = (int[])tp.Demand.Clone();
@@ -37,12 +47,7 @@ public class Vam
     public AllocationMatrix Search(out Profiler profiler)
     {
         profiler = new();
-        using var _ = profiler.Measure("Seq");
-        return Search();
-    }
-
-    public AllocationMatrix Search()
-    {
+        using var _ = profiler.Measure("Par");
         int doneCount = 0;
         while (doneCount != rowDone.Length + colDone.Length)
         {
@@ -72,77 +77,97 @@ public class Vam
 
     private int ArgmaxPenalty(out bool isRow)
     {
-        double maxPenalty = -1;
-        int idx = -1;
-
-        for (int i = 0; i < m; i++)
+        int ir = indexNotSet;
+        void findMaxInRow(int i)
         {
             if (rowDone[i])
-                continue;
+                return;
             rowPenalty[i] = CalcRowPenalty(i);
-            Debug.Assert(rowPenalty[i] >= 0);
-            if (rowPenalty[i] > maxPenalty)
-            {
-                maxPenalty = rowPenalty[i];
-                idx = i;
-            }
+            AtomicUpdateMaxPenaltyFrom(ref ir, i, rowPenalty);
         }
+        Parallel.For(0, m, parOpts, findMaxInRow);
 
-        for (int j = 0; j < n; j++)
+        int ic = indexNotSet;
+        void findMaxInCol(int j)
         {
             if (colDone[j])
-                continue;
+                return;
             colPenalty[j] = CalcColPenalty(j);
-            Debug.Assert(colPenalty[j] >= 0);
-            if (colPenalty[j] > maxPenalty)
-            {
-                maxPenalty = colPenalty[j];
-                idx = m + j;
-            }
+            AtomicUpdateMaxPenaltyFrom(ref ic, j, colPenalty);
         }
-        Debug.Assert(maxPenalty >= 0); // 0 is possible if one cost remained nondone
+        Parallel.For(0, n, parOpts, findMaxInCol);
 
-        isRow = idx < m;
-        return isRow switch
+        if (ir == indexNotSet)
         {
-            true => idx,
-            false => idx - m,
-        };
+            isRow = false;
+            return ic;
+        }
+        if (ic == indexNotSet)
+        {
+            isRow = true;
+            return ir;
+        }
+        isRow = rowPenalty[ir] > colPenalty[ic];
+
+        return isRow ? ir : ic;
+    }
+
+    private void AtomicUpdateMaxPenaltyFrom(ref int curMax, int i, double[] penalties)
+    {
+        if (indexNotSet == Interlocked.CompareExchange(ref curMax, i, indexNotSet))
+            return;
+        int imaxBeforeCheck;
+        do
+        {
+            imaxBeforeCheck = curMax;
+            if (penalties[i] <= penalties[imaxBeforeCheck])
+                return;
+        } while (imaxBeforeCheck != Interlocked.CompareExchange(ref curMax, i, imaxBeforeCheck));
     }
 
     private (int, int) ArgminColCost(int j)
     {
-        double minCost = double.PositiveInfinity;
-        int res_i = -1;
-        for (int i = 0; i < m; i++)
+        int imin = indexNotSet;
+        void AtomicUpdateArgmin(int i)
         {
             if (rowDone[i])
-                continue;
-            if (tp.Cost[i, j] < minCost)
+                return;
+            if (indexNotSet == Interlocked.CompareExchange(ref imin, i, indexNotSet))
+                return;
+            int iminBeforeCheck;
+            do
             {
-                minCost = tp.Cost[i, j];
-                res_i = i;
-            }
+                iminBeforeCheck = imin;
+                if (tp.Cost[i, j] >= tp.Cost[iminBeforeCheck, j])
+                    return;
+            } while (iminBeforeCheck != Interlocked.CompareExchange(ref imin, i, iminBeforeCheck));
         }
-        return (res_i, j);
+        Parallel.For(0, m, parOpts, AtomicUpdateArgmin);
+        return (imin, j);
     }
 
     private (int, int) ArgminRowCost(int i)
     {
-        double minCost = double.PositiveInfinity;
-        int res_j = -1;
-        for (int j = 0; j < n; j++)
+        int jmin = indexNotSet;
+        void AtomicUpdateArgmin(int j)
         {
             if (colDone[j])
-                continue;
-            if (tp.Cost[i, j] < minCost)
+                return;
+            if (indexNotSet == Interlocked.CompareExchange(ref jmin, j, indexNotSet))
+                return;
+            int jminBeforeCheck;
+            do
             {
-                minCost = tp.Cost[i, j];
-                res_j = j;
-            }
+                jminBeforeCheck = jmin;
+                if (tp.Cost[i, j] >= tp.Cost[i, jminBeforeCheck])
+                    return;
+            } while (jminBeforeCheck != Interlocked.CompareExchange(ref jmin, j, jminBeforeCheck));
         }
-        return (i, res_j);
+        Parallel.For(0, n, parOpts, AtomicUpdateArgmin);
+        return (i, jmin);
     }
+
+    #region Not changed methods
 
     private double CalcColPenalty(int j)
     {
@@ -190,4 +215,6 @@ public class Vam
         if (min2 < min1)
             (min1, min2) = (min2, min1);
     }
+
+    #endregion
 }
