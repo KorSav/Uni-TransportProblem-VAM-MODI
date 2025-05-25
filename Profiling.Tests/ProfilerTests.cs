@@ -1,4 +1,4 @@
-﻿namespace Profiler.Tests;
+﻿namespace Profiling.Tests;
 
 public class ProfilerTests
 {

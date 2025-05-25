@@ -5,11 +5,11 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TpSolver", "TpSolver\TpSolver.csproj", "{A9F017D6-F0FE-4107-A8A0-EE6AF872C06C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Profiler", "Profiler\Profiler.csproj", "{F2EA03B0-FDAC-4FEF-856D-EFAF2DF68CAB}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Profiling", "Profiling\Profiling.csproj", "{F2EA03B0-FDAC-4FEF-856D-EFAF2DF68CAB}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TpSolver.Tests", "TpSolver.Tests\TpSolver.Tests.csproj", "{88ACB388-1935-423D-8AFC-3A8C21C86294}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Profiler.Tests", "Profiler.Tests\Profiler.Tests.csproj", "{A9730A28-3603-41F4-9054-75A1BFE7B6CD}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Profiling.Tests", "Profiling.Tests\Profiling.Tests.csproj", "{A9730A28-3603-41F4-9054-75A1BFE7B6CD}"
 EndProject
 Global
 	GlobalSection(SolutionProperties) = preSolution

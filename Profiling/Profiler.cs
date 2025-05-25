@@ -1,6 +1,6 @@
 using System.Collections;
 
-namespace Profiler;
+namespace Profiling;
 
 public record StageMetrics(string Name, TimeSpan Elapsed);
 
