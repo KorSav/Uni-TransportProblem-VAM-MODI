@@ -4,12 +4,25 @@ namespace Profiler;
 
 public record StageMetrics(string Name, TimeSpan Elapsed);
 
+/// <summary>
+/// A stage-based profiler for measuring cumulative execution times of named code regions.
+/// </summary>
+/// <remarks>
+/// It is NOT thread-safe and should only be used from a single thread.
+/// </remarks>
 public class Profiler : IEnumerable<StageMetrics>
 {
     private readonly Dictionary<string, StageTimer> stages = [];
     private readonly List<string> stagesOrder = [];
 
-    public IDisposable StartStage(string name)
+    /// <summary>
+    /// Begins measuring time of the named stage.
+    /// <para>
+    /// If the stage has already been measured, the elapsed time will be accumulated.
+    /// </para>
+    /// </summary>
+    /// <returns>IDisposable that stops timer on disposal.</returns>
+    public IDisposable Measure(string name)
     {
         if (stages.TryGetValue(name, out StageTimer? value))
             return new StageScope(value);

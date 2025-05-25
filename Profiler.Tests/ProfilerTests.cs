@@ -9,7 +9,7 @@ public class ProfilerTests
         var expected = new StageMetrics("test", sleepTime);
 
         Profiler profiler = new();
-        using (profiler.StartStage("test"))
+        using (profiler.Measure("test"))
             Thread.Sleep(sleepTime);
 
         var actual = profiler.Single();
@@ -28,7 +28,7 @@ public class ProfilerTests
 
         Profiler profiler = new();
         foreach (var (name, _) in expected)
-            using (profiler.StartStage(name))
+            using (profiler.Measure(name))
                 Thread.Sleep(sleepTime);
 
         List<StageMetrics> actual = profiler.ToList();
@@ -53,10 +53,10 @@ public class ProfilerTests
         List<StageMetrics> expected = [new("outer", sleepTime * 2), new("inner", sleepTime)];
 
         Profiler profiler = new();
-        using (profiler.StartStage("outer"))
+        using (profiler.Measure("outer"))
         {
             Thread.Sleep(sleepTime);
-            using (profiler.StartStage("inner"))
+            using (profiler.Measure("inner"))
                 Thread.Sleep(sleepTime);
         }
 
