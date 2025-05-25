@@ -2,7 +2,7 @@
 
 namespace Profiler;
 
-public class StageTimer(string name)
+class StageTimer(string name)
 {
     private readonly Stopwatch sw = new();
     public string StageName { get; } = name;
