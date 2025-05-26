@@ -6,13 +6,13 @@ namespace TpSolver.Perturbation;
 class EpsilonPerturbation
 {
     private readonly AllocationMatrix allocation;
-    private readonly double[,] cost;
+    private readonly Matrix<double> cost;
     private readonly CycleSearcher cs;
-    private readonly bool[,] toCheck;
+    private readonly Matrix<bool> toCheck;
     private readonly int m;
     private readonly int n;
 
-    public EpsilonPerturbation(AllocationMatrix allocation, double[,] cost)
+    public EpsilonPerturbation(AllocationMatrix allocation, Matrix<double> cost)
     {
         this.allocation = allocation;
         m = allocation.NRows;
@@ -22,23 +22,21 @@ class EpsilonPerturbation
         toCheck = new bool[m, n];
     }
 
+    public EpsilonPerturbation(AllocationMatrix allocation, double[,] cost)
+        : this(allocation, new Matrix<double>(cost)) { }
+
     public bool TryPerturb(int pntCount)
     {
         Debug.Assert(pntCount > 0);
         if (pntCount <= 0)
             return true;
 
-        for (int i = 0; i < m; i++)
-        for (int j = 0; j < n; j++)
-            toCheck[i, j] = !allocation[i, j].IsBasic;
+        toCheck.Fill((p) => !allocation[p].IsBasic);
         Point? pntMin;
         List<Point>? cycle;
         int perturbedCount = 0;
-        int checkedCount = 0;
         for (; perturbedCount < pntCount; perturbedCount++)
         {
-            pntMin = null;
-            checkedCount = toCheck.Cast<bool>().Count(p => p);
             do
             {
                 pntMin = ArgminCostInCheckList();
@@ -46,10 +44,10 @@ class EpsilonPerturbation
                     return false;
                 cycle = cs.SearchClosed(pntMin.Value);
                 if (cycle is not null) // dont check points that are known to have cycle
-                    toCheck[pntMin.Value.i, pntMin.Value.j] = false;
+                    toCheck[pntMin.Value] = false;
             } while (cycle is not null);
             allocation[pntMin.Value] = allocation[pntMin.Value].ToBasic();
-            toCheck[pntMin.Value.i, pntMin.Value.j] = false;
+            toCheck[pntMin.Value] = false;
         }
         return true;
     }

@@ -1,3 +1,3 @@
 namespace TpSolver.Shared;
 
-record struct Point(int i, int j);
+public readonly record struct Point(int IRow, int ICol);

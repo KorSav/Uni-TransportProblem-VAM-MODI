@@ -1,27 +1,26 @@
+using TpSolver.Shared;
+
 namespace TpSolver;
 
-public class TransportProblem
+public class TransportProblem : Matrix<double>
 {
-    public double[,] Cost { get; private set; } = null!;
+    public Matrix<double> Cost => data;
     public int[] Supply { get; private set; } = null!;
     public int[] Demand { get; private set; } = null!;
 
-    int m;
-    int n;
-
-    private TransportProblem() { }
+    private TransportProblem()
+        : base(null!) { }
 
     /// <summary>
     /// Makes copies of all arrays if not balanced problem provided.
     /// </summary>
-    public TransportProblem(double[,] cost, int[] supply, int[] demand)
+    public TransportProblem(Matrix<double> cost, int[] supply, int[] demand)
         : this(cost, supply, demand, true) => BalanceIfNecessary(isSpaceReserved: false);
 
     // for testing purposes
-    internal TransportProblem(double[,] cost, int[] supply, int[] demand, bool noBalancing)
+    internal TransportProblem(Matrix<double> cost, int[] supply, int[] demand, bool noBalancing)
+        : base(cost)
     {
-        m = cost.GetLength(0);
-        n = cost.GetLength(1);
         if (m != supply.Length)
             throw new ArgumentException(
                 $"Invalid TP: supply ({supply.Length}) should match cost rows ({m})"
@@ -30,7 +29,6 @@ public class TransportProblem
             throw new ArgumentException(
                 $"Invalid TP: demand ({demand.Length}) should match cost columns ({n})"
             );
-        Cost = cost;
         Supply = supply;
         Demand = demand;
     }
@@ -63,11 +61,9 @@ public class TransportProblem
             for (int j = 0; j < n; j++)
                 extCost[i, j] = Cost[i, j];
 
-            Cost = extCost;
+            data = extCost;
             Supply = extSupply;
             Demand = extDemand;
-            m++;
-            n++;
         }
         if (totalSupply > totalDemand) // need dummy destination
             Demand[^1] = totalSupply - totalDemand;
@@ -84,7 +80,7 @@ public class TransportProblem
     public static TransportProblem GenerateRandom(int NSupply, int NDemand, TPValueLimits lim)
     {
         Random rnd = new();
-        var cost = new double[NSupply + 1, NDemand + 1];
+        var cost = new Matrix<double>(new double[NSupply + 1, NDemand + 1]);
         var supply = new int[NSupply + 1];
         var demand = new int[NDemand + 1];
 
@@ -92,14 +88,13 @@ public class TransportProblem
             supply[i] = rnd.Next(lim.SupplyLowerBound, lim.SupplyUpperBound);
         for (int j = 0; j < NDemand; j++)
             demand[j] = rnd.Next(lim.DemandLowerBound, lim.DemandUpperBound);
-        for (int i = 0; i < NSupply; i++)
-        for (int j = 0; j < NDemand; j++)
+        cost.Fill(p =>
         {
             double d = lim.CostUpperBound - lim.CostLowerBound;
-            cost[i, j] = lim.CostLowerBound + d * rnd.NextDouble();
-        }
+            return lim.CostLowerBound + d * rnd.NextDouble();
+        });
 
-        TransportProblem tp = new(cost, supply, demand, true);
+        TransportProblem tp = new(cost, supply, demand, true); // TODO: strange TP balancing
         tp.BalanceIfNecessary(); // without arrays realloc
         return tp;
     }

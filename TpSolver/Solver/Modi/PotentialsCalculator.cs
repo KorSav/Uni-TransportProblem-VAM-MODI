@@ -4,14 +4,14 @@ using TpSolver.Shared;
 namespace TpSolver.Solver.Modi;
 
 class PotentialsCalculator(
-    double[,] cost,
+    Matrix<double> cost,
     AllocationMatrix allocation,
     double[] RPotential,
     double[] CPotential
 )
 {
     readonly AllocationMatrix allocation = allocation;
-    readonly double[,] cost = cost;
+    readonly Matrix<double> cost = cost;
 
     readonly int m = RPotential.Length;
     readonly double[] RPotential = RPotential;

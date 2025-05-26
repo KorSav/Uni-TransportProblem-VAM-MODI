@@ -20,7 +20,7 @@ public class ModiSolver(TransportProblem tp)
     {
         pivotCount = 0;
         sln = bfsSearcher.Search();
-        int perturbCount = m + n - 1 - sln.CountBasic();
+        int perturbCount = m + n - 1 - sln.Count(static a => a.IsBasic);
         if (perturbCount > 0)
         {
             // Deal with degeneracy
