@@ -77,9 +77,18 @@ public class VamParallel
 
     private int ArgmaxPenalty(out bool isRow)
     {
+        // despite double is used for penalties
+        // it is possible for two exactly same penalties occur
+        // especially, when many numbers are randomly generated
+        // in this case algorithm assures to choose maximum:
+        //   - if in the same vector: with lowest index
+        //   - if in different vectors: row dominate over column
         int ir = indexNotSet;
         void findMaxInRow(int i)
         {
+            // take batch index
+            // find points from and points to
+            // calculate two local minimums
             if (rowDone[i])
                 return;
             rowPenalty[i] = CalcRowPenalty(i);
@@ -107,12 +116,12 @@ public class VamParallel
             isRow = true;
             return ir;
         }
-        isRow = rowPenalty[ir] > colPenalty[ic];
+        isRow = rowPenalty[ir] >= colPenalty[ic];
 
         return isRow ? ir : ic;
     }
 
-    private void AtomicUpdateMaxPenaltyFrom(ref int curMax, int i, double[] penalties)
+    private void AtomicUpdateMaxPenaltyFrom(ref int curMax, int i, double[] penalty)
     {
         if (indexNotSet == Interlocked.CompareExchange(ref curMax, i, indexNotSet))
             return;
@@ -120,7 +129,10 @@ public class VamParallel
         do
         {
             imaxBeforeCheck = curMax;
-            if (penalties[i] <= penalties[imaxBeforeCheck])
+            if (
+                penalty[i] < penalty[imaxBeforeCheck]
+                || penalty[i] == penalty[imaxBeforeCheck] && i > imaxBeforeCheck
+            )
                 return;
         } while (imaxBeforeCheck != Interlocked.CompareExchange(ref curMax, i, imaxBeforeCheck));
     }
