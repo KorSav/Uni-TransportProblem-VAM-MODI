@@ -44,7 +44,14 @@ public class TransportProblem : Matrix<double>
             totalDemand += Demand[j];
 
         if (totalSupply == totalDemand)
+        {
+            if (isSpaceReserved)
+            {
+                Supply[^1] = 1;
+                Demand[^1] = 1;
+            }
             return false;
+        }
 
         // balance problem
         if (!isSpaceReserved)

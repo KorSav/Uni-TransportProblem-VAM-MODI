@@ -4,48 +4,59 @@ using TpSolver.Shared;
 
 namespace TpSolver.Perturbation;
 
-class EpsilonPerturbation
+class EpsilonPerturbationParallel
 {
     private readonly AllocationMatrix allocation;
     private readonly Matrix<double> cost;
-    private readonly CycleSearcher cs;
+    private readonly CycleSearcherParallel cs;
     private readonly Matrix<bool> toCheck;
     private readonly int m;
     private readonly int n;
+    private readonly ParallelOptions parOpts;
+
     public Profiler CycleProfiler { get; }
     public Profiler Profiler { get; }
 
-    public EpsilonPerturbation(AllocationMatrix allocation, Matrix<double> cost)
+    public EpsilonPerturbationParallel(
+        AllocationMatrix allocation,
+        Matrix<double> cost,
+        ParallelOptions parallelOptions
+    )
     {
         this.allocation = allocation;
+        parOpts = parallelOptions;
         m = allocation.NRows;
         n = allocation.NCols;
-        cs = new(this.allocation);
+        cs = new(this.allocation, parOpts);
         this.cost = cost;
         toCheck = new bool[m, n];
         CycleProfiler = cs.Profiler;
         Profiler = new();
     }
 
-    public EpsilonPerturbation(AllocationMatrix allocation, double[,] cost)
-        : this(allocation, new Matrix<double>(cost)) { }
+    public EpsilonPerturbationParallel(
+        AllocationMatrix allocation,
+        double[,] cost,
+        ParallelOptions parallelOptions
+    )
+        : this(allocation, new Matrix<double>(cost), parallelOptions) { }
 
     public bool TryPerturb(int pntCount)
     {
         Debug.Assert(pntCount > 0);
         if (pntCount <= 0)
-            return true;
+            return false;
 
         toCheck.Fill((p) => !allocation[p].IsBasic);
         Point? pntMin;
-        List<Point>? cycle;
+        List<Point>? cycle = null;
         int perturbedCount = 0;
         int cyclesFound = 0;
         for (; perturbedCount < pntCount; perturbedCount++)
         {
             do
             {
-                using (Profiler.Measure("seq, argmin"))
+                using (Profiler.Measure("par, argmin"))
                     pntMin = ArgminCostInCheckList();
                 if (pntMin is null) // all non basic cells were tried
                     return false;

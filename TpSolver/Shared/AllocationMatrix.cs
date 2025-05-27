@@ -14,6 +14,12 @@ public class AllocationMatrix : Matrix<AllocationValue>
         Fill((i, j) => new(allocations[i, j]));
     }
 
+    public AllocationMatrix(AllocationMatrix am)
+        : base(new AllocationValue[am.m, am.n])
+    {
+        Fill(p => am[p]);
+    }
+
     public int CountBasic()
     {
         int counter = 0;

@@ -1,19 +1,20 @@
 using System.Diagnostics;
+using Profiling;
 
 namespace TpSolver.Shared;
 
 class CycleSearcher
 {
     private readonly AllocationMatrix allocation;
-    private readonly bool[,] visited;
+    private readonly Matrix<bool> visited;
     private List<Point> cycle = null!;
-
-    private enum Move { }
+    public Profiler Profiler { get; }
 
     public CycleSearcher(AllocationMatrix allocation)
     {
         this.allocation = allocation;
         visited = new bool[allocation.NRows, allocation.NCols];
+        Profiler = new();
     }
 
     public CycleSearcher(int[,] allocation)
@@ -32,7 +33,8 @@ class CycleSearcher
 
     private List<Point>? SearchBasic(Point aim)
     {
-        MakeAllNonvisited();
+        using var _ = Profiler.Measure("Total");
+        visited.Fill(p => false);
         cycle = new(allocation.NRows + allocation.NCols - 1);
         Point? next;
         Point cur = aim;
@@ -54,15 +56,6 @@ class CycleSearcher
         return cycle;
     }
 
-    private void MakeAllNonvisited()
-    {
-        for (int i = 0; i < visited.GetLength(0); i++)
-        for (int j = 0; j < visited.GetLength(1); j++)
-        {
-            visited[i, j] = false;
-        }
-    }
-
     private Point? GetNewAdjacent()
     {
         Debug.Assert(cycle.Count != 0);
@@ -78,6 +71,7 @@ class CycleSearcher
 
     private Point? GetNonVisitedInRow(int i, int filter)
     {
+        using var _ = Profiler.Measure("Searching allocation");
         for (int j = 0; j < allocation.NCols; j++)
             if (allocation[i, j].IsBasic && !visited[i, j] && j != filter)
                 return new(i, j);
@@ -86,6 +80,7 @@ class CycleSearcher
 
     private Point? GetNonVisitedInColumn(int j, int filter)
     {
+        using var _ = Profiler.Measure("Searching allocation");
         for (int i = 0; i < allocation.NRows; i++)
             if (allocation[i, j].IsBasic && !visited[i, j] && i != filter)
                 return new(i, j);
