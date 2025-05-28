@@ -33,6 +33,8 @@ public class Profiler : IEnumerable<StageMetrics>
         return new StageScope(st);
     }
 
+    public StageMetrics this[string name] => new(name, stages[name].TotalElapsed);
+
     public IEnumerator<StageMetrics> GetEnumerator()
     {
         foreach (var stageName in stagesOrder)
@@ -58,5 +60,12 @@ public class Profiler : IEnumerable<StageMetrics>
         }
 
         public void Dispose() => st.Stop();
+    }
+
+    public static IDisposable NoOp() => new NoOpDisposable();
+
+    private class NoOpDisposable : IDisposable
+    {
+        public void Dispose() { }
     }
 }
