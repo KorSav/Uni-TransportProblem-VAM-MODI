@@ -20,6 +20,7 @@ public class ModiSolver(TransportProblem tp)
 
     public AllocationMatrix? Solve(out int pivotCount) // FIXME: see ModiSolverParallel
     {
+        using var _ = Profiler.Measure("Total");
         pivotCount = 0;
         sln = bfsSearcher.Search();
         int perturbCount = m + n - 1 - sln.Count(static a => a.IsBasic);
@@ -32,11 +33,14 @@ public class ModiSolver(TransportProblem tp)
         }
         PotentialsCalculator pc = new(tp.Cost, sln, RPotential, CPotential);
         CycleSearcher cs = new(sln);
+        double min;
+        Point pnt_min;
         do
         {
             using (Profiler.Measure("Potentials"))
                 pc.CalcPotentials();
-            Point pnt_min = ArgminNonBasicCostDiffPotential(out double min);
+            using (Profiler.Measure("Argmin"))
+                pnt_min = ArgminNonBasicCostDiffPotential(out min);
             if (min >= 0)
                 break; // sln is optimal
             List<Point>? cycle = cs.SearchClosed(pnt_min);
