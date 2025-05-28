@@ -14,7 +14,7 @@ public class ModiSolverParallel(TransportProblem tp, ParallelOptions parallelOpt
     readonly double[] RPotential = new double[tp.Supply.Length];
     readonly int n = tp.Demand.Length;
     readonly double[] CPotential = new double[tp.Demand.Length];
-    readonly VamParallel bfsSearcher = new(tp, parallelOptions);
+    readonly VamParallel bfsSearcher = new(tp, parallelOptions.MaxDegreeOfParallelism);
     EpsilonPerturbationParallel perturbation = null!;
     AllocationMatrix sln = null!;
     readonly ParallelOptions parOpts = parallelOptions;

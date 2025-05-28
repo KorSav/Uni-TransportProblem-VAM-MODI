@@ -4,69 +4,19 @@ using TpSolver.Shared;
 
 namespace TpSolver.BfsSearch;
 
-public class Vam
+public class Vam : VamBase
 {
-    double[] rowPenalty;
-    double[] colPenalty;
-    int m;
-    int n;
-    AllocationMatrix allocation;
-    bool[] rowDone; // or supply
-    bool[] colDone; // or demand
-    TransportProblem tp;
-    int[] supply; // copies that will be modified
-    int[] demand;
-
-    public Profiler Profiler { get; private init; } = new();
+    protected readonly double[] rowPenalty;
+    protected readonly double[] colPenalty;
 
     public Vam(TransportProblem tp)
+        : base(tp)
     {
-        this.tp = tp;
-        supply = (int[])tp.Supply.Clone();
-        demand = (int[])tp.Demand.Clone();
-
-        m = supply.Length;
-        n = demand.Length;
-        allocation = new(new int[m, n]);
-
         rowPenalty = new double[m];
-        rowDone = new bool[m];
-
         colPenalty = new double[n];
-        colDone = new bool[n];
     }
 
-    public AllocationMatrix Search()
-    {
-        using var _ = Profiler.Measure("Seq");
-        int doneCount = 0;
-        while (doneCount != rowDone.Length + colDone.Length)
-        {
-            int idx = ArgmaxPenalty(out bool isRow);
-            (int i_min, int j_min) = isRow ? ArgminRowCost(idx) : ArgminColCost(idx);
-
-            // Allocate maximally allowed
-            int quantity = Math.Min(supply[i_min], demand[j_min]);
-            allocation[i_min, j_min] = new(quantity);
-            supply[i_min] -= quantity;
-            demand[j_min] -= quantity;
-
-            // Update done lists
-            if (supply[i_min] == 0)
-            {
-                rowDone[i_min] = true;
-                doneCount++;
-            }
-            if (demand[j_min] == 0)
-            {
-                colDone[j_min] = true;
-                doneCount++;
-            }
-        }
-        return allocation;
-    }
-
-    private int ArgmaxPenalty(out bool isRow)
+    protected override int ArgmaxPenalty(out bool isRow)
     {
         double maxPenalty = -1;
         int idx = -1;
@@ -106,7 +56,7 @@ public class Vam
         };
     }
 
-    private (int, int) ArgminColCost(int j)
+    protected override Point ArgminColCost(int j)
     {
         double minCost = double.PositiveInfinity;
         int res_i = -1;
@@ -120,10 +70,10 @@ public class Vam
                 res_i = i;
             }
         }
-        return (res_i, j);
+        return new(res_i, j);
     }
 
-    private (int, int) ArgminRowCost(int i)
+    protected override Point ArgminRowCost(int i)
     {
         double minCost = double.PositiveInfinity;
         int res_j = -1;
@@ -137,10 +87,10 @@ public class Vam
                 res_j = j;
             }
         }
-        return (i, res_j);
+        return new(i, res_j);
     }
 
-    private double CalcColPenalty(int j)
+    protected double CalcColPenalty(int j)
     {
         double min1 = double.PositiveInfinity;
         double min2 = double.PositiveInfinity;
@@ -154,7 +104,7 @@ public class Vam
         return CalcPenalty(min1, min2);
     }
 
-    private double CalcRowPenalty(int i)
+    protected double CalcRowPenalty(int i)
     {
         double min1 = double.PositiveInfinity;
         double min2 = double.PositiveInfinity;
