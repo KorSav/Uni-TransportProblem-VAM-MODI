@@ -13,6 +13,7 @@ class EpsilonPerturbationParallel
     private readonly int m;
     private readonly int n;
     private readonly ParallelOptions parOpts;
+    private readonly Point?[] localMins;
 
     public Profiler CycleProfiler { get; }
     public Profiler Profiler { get; }
@@ -30,6 +31,7 @@ class EpsilonPerturbationParallel
         cs = new(this.allocation, parOpts);
         this.cost = cost;
         toCheck = new bool[m, n];
+        localMins = new Point?[parOpts.MaxDegreeOfParallelism];
         CycleProfiler = cs.Profiler;
         Profiler = new();
     }
@@ -75,19 +77,54 @@ class EpsilonPerturbationParallel
 
     private Point? ArgminCostInCheckList()
     {
-        Point? pnt = null;
-        double costMin = double.PositiveInfinity;
-
-        for (int i = 0; i < allocation.NRows; i++)
-        for (int j = 0; j < allocation.NCols; j++)
+        Task[] tasks = new Task[parOpts.MaxDegreeOfParallelism];
+        int baseChunkSize = m * n / tasks.Length;
+        int residue = m * n % tasks.Length;
+        int curI = 0;
+        for (int i = 0; i < tasks.Length; i++)
         {
+            int chunkSize = baseChunkSize + (i < residue ? 1 : 0);
+            int iFrom = curI;
+            int iTo = curI + chunkSize;
+            curI = iTo;
+            int taskIndex = i;
+            tasks[i] = Task.Run(() => UpdateArgminInRange(taskIndex, iFrom, iTo));
+        }
+        Task.WaitAll(tasks);
+        Point? globalMin = localMins[0];
+        for (int i = 0; i < localMins.Length; i++)
+        {
+            if (localMins[i] is null)
+                continue;
+            if (globalMin is null)
+            {
+                globalMin = localMins[i];
+                continue;
+            }
+            if (
+                cost[localMins[i]!.Value] < cost[globalMin.Value]
+                || (cost[localMins[i]!.Value] == cost[globalMin.Value] && localMins[i] < globalMin)
+            )
+                globalMin = localMins[i];
+        }
+        return globalMin;
+    }
+
+    private void UpdateArgminInRange(int iLocalMin, int fromInc, int toExc)
+    {
+        Point? min = null;
+        double costMin = double.PositiveInfinity;
+        for (int compound = fromInc + 1; compound < toExc; compound++)
+        {
+            int i = compound / n;
+            int j = compound % n;
             double cost = this.cost[i, j];
             if (toCheck[i, j] && cost < costMin)
             {
                 costMin = cost;
-                pnt = new(i, j);
+                min = new(i, j);
             }
         }
-        return pnt;
+        localMins[iLocalMin] = min;
     }
 }
