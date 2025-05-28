@@ -24,7 +24,7 @@ public class VamTests
         var costPar = actual.CalcTotalCost(tp.Cost);
         Assert.True(costPar == costSeq);
         Assert.Equal(expected.AsEnumerable(), actual.AsEnumerable());
-        Assert.True(speedup > 1.2);
+        Assert.True(speedup > 1.2, $"Speedup is too small - {speedup}");
         Console.WriteLine($"[Perf vam] Size={size}, S={speedup}");
     }
 
@@ -40,7 +40,6 @@ public class VamTests
         var vamPar = new VamParallel(tp, new() { MaxDegreeOfParallelism = 6 });
         var expected = vamSeq.Search();
         var actual = vamPar.Search();
-        var speedup = vamSeq.Profiler.First().Elapsed / vamPar.Profiler.First().Elapsed;
 
         var costSeq = expected.CalcTotalCost(tp.Cost);
         var costPar = actual.CalcTotalCost(tp.Cost);

@@ -6,19 +6,20 @@ using TpSolver.Shared;
 
 namespace TpSolver.Solver.Modi;
 
-public class ModiSolver(TransportProblem tp)
+public class ModiSolverParallel(TransportProblem tp, ParallelOptions parallelOptions)
 {
     readonly TransportProblem tp = tp;
     readonly int m = tp.Supply.Length;
     readonly double[] RPotential = new double[tp.Supply.Length];
     readonly int n = tp.Demand.Length;
     readonly double[] CPotential = new double[tp.Demand.Length];
-    readonly Vam bfsSearcher = new(tp);
-    EpsilonPerturbation perturbation = null!;
+    readonly VamParallel bfsSearcher = new(tp, parallelOptions);
+    EpsilonPerturbationParallel perturbation = null!;
     AllocationMatrix sln = null!;
-    public Profiler Profiler { get; set; } = new(); // TODO: make nullable and measure only when provided
+    readonly ParallelOptions parOpts = parallelOptions;
+    public Profiler Profiler { get; private init; } = new(); // TODO: make a substage, and give to inner algorithms as profiler to write in
 
-    public AllocationMatrix? Solve(out int pivotCount) // FIXME: see ModiSolverParallel
+    public AllocationMatrix? Solve(out int pivotCount) // FIXME: profiler responsibility
     {
         pivotCount = 0;
         sln = bfsSearcher.Search();
@@ -26,11 +27,17 @@ public class ModiSolver(TransportProblem tp)
         if (perturbCount > 0)
         {
             // Deal with degeneracy
-            perturbation = new(sln, tp.Cost);
+            perturbation = new(sln, tp.Cost, parOpts);
             if (!perturbation.TryPerturb(perturbCount))
                 return null;
         }
-        PotentialsCalculator pc = new(tp.Cost, sln, RPotential, CPotential);
+        PotentialsCalculatorParallel pc = new(
+            tp.Cost,
+            sln,
+            RPotential,
+            CPotential,
+            parOpts.MaxDegreeOfParallelism
+        );
         CycleSearcher cs = new(sln);
         do
         {

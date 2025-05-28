@@ -44,7 +44,7 @@ public class CycleSearcherTests
         Assert.True(costPar == costSeq);
         Assert.Equal(expected.Count(a => a.IsBasic), actual.Count(a => a.IsBasic));
         Assert.Equal(expected.AsEnumerableNBDistinct(), actual.AsEnumerableNBDistinct());
-        Assert.True(speedup > 1.2);
+        Assert.True(speedup > 1.2, $"Speedup is too small - {speedup}");
         Console.WriteLine($"[Perf cycle search] Size={size}, S={speedup}");
         var orderedTimings = ep2.CycleProfiler.OrderByDescending(sm => sm.Elapsed);
     }

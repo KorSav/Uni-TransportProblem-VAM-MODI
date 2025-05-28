@@ -41,4 +41,39 @@ public class AllocationMatrix : Matrix<AllocationValue>
             total += cost[i, j] * data[i, j];
         return total;
     }
+
+    internal void Pivot(List<Point> cycle)
+    {
+        // if min == 0, proceed because it changes list of basic cells
+        int min = MinOfCycleAtOddIndexes(cycle);
+        int nonBasicMetCount = 0;
+        this[cycle[0]] += new AllocationValue(min);
+        this[cycle[0]] = this[cycle[0]].ToBasic();
+        for (int i = 1; i < cycle.Count; i++)
+        {
+            if (i % 2 == 0)
+                this[cycle[i]] += new AllocationValue(min);
+            else
+                this[cycle[i]] -= new AllocationValue(min);
+
+            // avoid degeneracy
+            var current = this[cycle[i]];
+            if (!current.IsBasic)
+                if (nonBasicMetCount++ > 0)
+                    this[cycle[i]] = current.ToBasic();
+        }
+    }
+
+    private int MinOfCycleAtOddIndexes(List<Point> cycle)
+    {
+        int min = int.MaxValue;
+        for (int i = 1; i < cycle.Count; i++)
+            if (i % 2 == 1)
+            {
+                int val = this[cycle[i]];
+                if (val < min)
+                    min = val;
+            }
+        return min;
+    }
 }
