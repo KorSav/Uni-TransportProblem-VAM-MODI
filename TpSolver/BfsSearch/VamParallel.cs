@@ -19,6 +19,7 @@ public class VamParallel
     int[] supply; // copies that will be modified
     int[] demand;
     readonly ParallelOptions parOpts;
+    public Profiler Profiler { get; private init; } = new();
 
     /// <summary>
     /// Tries to execute at most <paramref name="parallelizationDegree"/> tasks in parallel.
@@ -44,10 +45,9 @@ public class VamParallel
         colDone = new bool[n];
     }
 
-    public AllocationMatrix Search(out Profiler profiler)
+    public AllocationMatrix Search()
     {
-        profiler = new();
-        using var _ = profiler.Measure("Par");
+        using var _ = Profiler.Measure("Total");
         int doneCount = 0;
         while (doneCount != rowDone.Length + colDone.Length)
         {

@@ -17,6 +17,8 @@ public class Vam
     int[] supply; // copies that will be modified
     int[] demand;
 
+    public Profiler Profiler { get; private init; } = new();
+
     public Vam(TransportProblem tp)
     {
         this.tp = tp;
@@ -34,15 +36,9 @@ public class Vam
         colDone = new bool[n];
     }
 
-    public AllocationMatrix Search(out Profiler profiler)
-    {
-        profiler = new();
-        using var _ = profiler.Measure("Seq");
-        return Search();
-    }
-
     public AllocationMatrix Search()
     {
+        using var _ = Profiler.Measure("Seq");
         int doneCount = 0;
         while (doneCount != rowDone.Length + colDone.Length)
         {

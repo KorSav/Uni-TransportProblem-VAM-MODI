@@ -14,18 +14,18 @@ public class VamTests
     {
         TransportProblem tp = TransportProblem.GenerateRandom(size, size);
 
-        var expected = new Vam(tp).Search(out Profiler profilerSeq);
-        var actual = new VamParallel(tp, new() { MaxDegreeOfParallelism = 6 }).Search(
-            out Profiler profilerPar
-        );
-        var speedup = profilerSeq.First().Elapsed / profilerPar.First().Elapsed;
+        var vamSeq = new Vam(tp);
+        var vamPar = new VamParallel(tp, new() { MaxDegreeOfParallelism = 6 });
+        var expected = vamSeq.Search();
+        var actual = vamPar.Search();
+        var speedup = vamSeq.Profiler.First().Elapsed / vamPar.Profiler.First().Elapsed;
 
         var costSeq = expected.CalcTotalCost(tp.Cost);
         var costPar = actual.CalcTotalCost(tp.Cost);
         Assert.True(costPar == costSeq);
         Assert.Equal(expected.AsEnumerable(), actual.AsEnumerable());
         Assert.True(speedup > 1.2);
-        Console.WriteLine($"[Perf] Size={size}, S={speedup}");
+        Console.WriteLine($"[Perf vam] Size={size}, S={speedup}");
     }
 
     [Theory]
@@ -36,11 +36,11 @@ public class VamTests
     {
         TransportProblem tp = TransportProblem.GenerateRandom(m, n);
 
-        var expected = new Vam(tp).Search(out Profiler profilerSeq);
-        var actual = new VamParallel(tp, new() { MaxDegreeOfParallelism = 6 }).Search(
-            out Profiler profilerPar
-        );
-        var speedup = profilerSeq.First().Elapsed / profilerPar.First().Elapsed;
+        var vamSeq = new Vam(tp);
+        var vamPar = new VamParallel(tp, new() { MaxDegreeOfParallelism = 6 });
+        var expected = vamSeq.Search();
+        var actual = vamPar.Search();
+        var speedup = vamSeq.Profiler.First().Elapsed / vamPar.Profiler.First().Elapsed;
 
         var costSeq = expected.CalcTotalCost(tp.Cost);
         var costPar = actual.CalcTotalCost(tp.Cost);

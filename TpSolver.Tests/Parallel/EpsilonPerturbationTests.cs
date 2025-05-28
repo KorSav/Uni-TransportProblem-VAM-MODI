@@ -20,7 +20,7 @@ public class EpsilonPerturbationTests
         );
         TransportProblem degenerousTp = TransportProblem.GenerateRandom(size, size, limits);
 
-        var expected = new Vam(degenerousTp).Search(out _);
+        var expected = new Vam(degenerousTp).Search();
         AllocationMatrix actual = new(expected);
         int perturbCount = actual.NRows + actual.NCols - 1 - actual.Count(a => a.IsBasic);
 
@@ -47,7 +47,7 @@ public class EpsilonPerturbationTests
         Assert.Equal(expected.Count(a => a.IsBasic), actual.Count(a => a.IsBasic));
         Assert.Equal(expected.AsEnumerableNBDistinct(), actual.AsEnumerableNBDistinct());
         Assert.True(speedup > 1.2);
-        Console.WriteLine($"[Perf] Size={size}, S={speedup}");
+        Console.WriteLine($"[Perf perturb] Size={size}, S={speedup}");
         var orderedTimings = ep2.CycleProfiler.OrderByDescending(sm => sm.Elapsed);
     }
 }
