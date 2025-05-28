@@ -26,41 +26,27 @@ class PotentialsCalculator(
     /// </summary>
     public void CalcPotentials()
     {
-        // null done lists - to allow multiple calls
+        // clear done lists - to allow multiple calls
         for (int i = 0; i < m; i++)
             RDone[i] = false;
         for (int j = 0; j < n; j++)
             CDone[j] = false;
 
-        List<int> potentialsToAdd = new(m + n);
-        int doneCount = 1;
         RDone[0] = true;
-        List<int> potentialsToCheck = new(m + n) { 0 };
-        do
+        Queue<int> toCheck = new(m + n);
+        toCheck.Enqueue(0);
+        while (toCheck.TryDequeue(out int idx))
         {
-            potentialsToAdd.Clear();
-            int count = potentialsToCheck.Count;
-            for (int i = 0; i < count; i++)
-            {
-                int idx = potentialsToCheck[i];
-                bool isRPotential = true;
-                if (idx >= m)
-                {
-                    isRPotential = false;
-                    idx -= m;
-                }
-                potentialsToAdd.AddRange(
-                    isRPotential
-                        ? CalcAllNotCDoneUsing(idx, ref doneCount)
-                        : CalcAllNotRDoneUsing(idx, ref doneCount)
-                );
-            }
-            potentialsToCheck.Clear();
-            potentialsToCheck.AddRange(potentialsToAdd);
-        } while (doneCount != RDone.Length + CDone.Length);
+            bool isRPotential = idx < m;
+            List<int> calculated = isRPotential
+                ? CalcAllNotCDoneUsing(idx)
+                : CalcAllNotRDoneUsing(idx - m);
+            foreach (var potential in calculated)
+                toCheck.Enqueue(potential);
+        }
     }
 
-    private List<int> CalcAllNotCDoneUsing(int i, ref int doneCount)
+    private List<int> CalcAllNotCDoneUsing(int i)
     {
         Debug.Assert(RDone[i]);
         List<int> res = new(n);
@@ -71,13 +57,12 @@ class PotentialsCalculator(
                 res.Add(m + j);
                 CPotential[j] = cost[i, j] - RPotential[i];
                 CDone[j] = true;
-                doneCount += 1;
             }
         }
         return res;
     }
 
-    private List<int> CalcAllNotRDoneUsing(int j, ref int doneCount)
+    private List<int> CalcAllNotRDoneUsing(int j)
     {
         Debug.Assert(CDone[j]);
         List<int> res = new(n);
@@ -88,7 +73,6 @@ class PotentialsCalculator(
                 res.Add(i);
                 RPotential[i] = cost[i, j] - CPotential[j];
                 RDone[i] = true;
-                doneCount += 1;
             }
         }
         return res;
