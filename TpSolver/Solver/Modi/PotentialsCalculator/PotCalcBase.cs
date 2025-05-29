@@ -3,8 +3,8 @@ using TpSolver.Shared;
 namespace TpSolver.Solver.Modi.PotentialsCalculator;
 
 abstract class PotCalcBase(
-    Matrix<double> cost,
     AllocationMatrix allocation,
+    Matrix<double> cost,
     double[] RPotential,
     double[] CPotential
 )

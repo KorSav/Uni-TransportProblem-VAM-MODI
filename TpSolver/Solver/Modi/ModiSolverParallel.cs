@@ -1,5 +1,3 @@
-using System.Diagnostics;
-using Profiling;
 using TpSolver.BfsSearch;
 using TpSolver.CycleSearch;
 using TpSolver.Perturbation;
@@ -9,63 +7,15 @@ using TpSolver.Utils;
 
 namespace TpSolver.Solver.Modi;
 
-public class ModiSolverParallel(TransportProblem tp, ParallelOptions parallelOptions)
+public class ModiSolverParallel(TransportProblem tp, int maxDegreeOfParallelism)
+    : ModiSolverBase(tp)
 {
-    readonly TransportProblem tp = tp;
-    readonly int m = tp.Supply.Length;
-    readonly double[] RPotential = new double[tp.Supply.Length];
-    readonly int n = tp.Demand.Length;
-    readonly double[] CPotential = new double[tp.Demand.Length];
-    readonly VamParallel bfsSearcher = new(tp, parallelOptions.MaxDegreeOfParallelism);
-    EpsilonPerturbationParallel perturbation = null!;
-    AllocationMatrix sln = null!;
-    readonly ParallelOptions parOpts = parallelOptions;
-    public Profiler Profiler { get; private init; } = new(); // TODO: make a substage, and give to inner algorithms as profiler to write in
+    protected int parDeg = maxDegreeOfParallelism;
 
-    public AllocationMatrix? Solve(out int pivotCount) // FIXME: profiler responsibility
-    {
-        using var _ = Profiler.Measure("Total");
-        pivotCount = 0;
-        sln = bfsSearcher.Search();
-        int perturbCount = m + n - 1 - sln.Count(static a => a.IsBasic);
-        if (perturbCount > 0)
-        {
-            // Deal with degeneracy
-            perturbation = new(sln, tp.Cost, parOpts.MaxDegreeOfParallelism);
-            if (!perturbation.TryPerturb(perturbCount))
-                return null;
-        }
-        PotCalcParallel pc = new(
-            tp.Cost,
-            sln,
-            RPotential,
-            CPotential,
-            parOpts.MaxDegreeOfParallelism
-        );
-        CycleSearcher cs = new(sln);
-        PntDiffPotential min;
-        do
-        {
-            using (Profiler.Measure("Potentials"))
-                pc.CalcPotentials();
-            using (Profiler.Measure("Argmin"))
-                min = ArgminNonBasicCostDiffPotential();
-            if (min.diff >= 0)
-                break; // sln is optimal
-            List<Point>? cycle = cs.SearchClosed(min.pnt);
-            Debug.Assert(cycle is not null); // math states that cycle will be always found
-            if (cycle is null)
-                break;
-            pivotCount++;
-            sln.Pivot(cycle);
-        } while (true);
-        return sln;
-    }
-
-    private PntDiffPotential ArgminNonBasicCostDiffPotential()
+    protected override PntDiffPotential MinDiffNBCostPotential()
     {
         PntDiffPotential globalMin;
-        var tasks = new Task<PntDiffPotential?>[parOpts.MaxDegreeOfParallelism];
+        var tasks = new Task<PntDiffPotential?>[parDeg];
         if (!tasks.TryRunDistributedRange(0, m * n, ArgminNonBasicCostDiffPotentialInRange))
             return ArgminNonBasicCostDiffPotentialInRange(0, m * n) ?? PntDiffPotential.MaxValue; // should never be null
         Task.WaitAll(tasks);
@@ -102,17 +52,20 @@ public class ModiSolverParallel(TransportProblem tp, ParallelOptions parallelOpt
         return new(pntMin.Value, min);
     }
 
-    private readonly struct PntDiffPotential(Point pnt, double diff)
-    {
-        public readonly Point pnt = pnt;
-        public readonly double diff = diff;
+    protected override VamBase CreateBfsSearcher() => new VamParallel(tp, parDeg);
 
-        public static PntDiffPotential MaxValue =>
-            new(new Point(int.MaxValue, int.MaxValue), double.PositiveInfinity);
+    protected override CycleSearcher CreateCycleSearcher(AllocationMatrix am) =>
+        new CycleSearcherParallel(am, parDeg);
 
-        public static bool operator <(PntDiffPotential a, PntDiffPotential b) =>
-            a.diff < b.diff || (a.diff == b.diff && a.pnt < b.pnt);
+    protected override EpsilonPerturbation CreateEpsilonPerturbation(
+        AllocationMatrix am,
+        Matrix<double> cost
+    ) => new EpsilonPerturbationParallel(am, cost, parDeg);
 
-        public static bool operator >(PntDiffPotential a, PntDiffPotential b) => b < a;
-    }
+    private protected override PotCalcBase CreatePotentialsCalculator(
+        AllocationMatrix am,
+        Matrix<double> cost,
+        double[] RPotential,
+        double[] CPotential
+    ) => new PotCalcParallel(am, cost, RPotential, CPotential, parDeg);
 }

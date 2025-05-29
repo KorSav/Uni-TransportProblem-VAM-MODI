@@ -5,12 +5,12 @@ using TpSolver.Shared;
 namespace TpSolver.Solver.Modi.PotentialsCalculator;
 
 class PotCalcParallel(
-    Matrix<double> cost,
     AllocationMatrix allocation,
+    Matrix<double> cost,
     double[] RPotential,
     double[] CPotential,
     int parDeq
-) : PotCalcBase(cost, allocation, RPotential, CPotential)
+) : PotCalcBase(allocation, cost, RPotential, CPotential)
 {
     readonly ConcurrentBag<int> RDone = [];
     readonly ConcurrentBag<int> CDone = [];

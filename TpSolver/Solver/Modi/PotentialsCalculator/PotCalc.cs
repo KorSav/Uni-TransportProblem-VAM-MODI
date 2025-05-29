@@ -4,11 +4,11 @@ using TpSolver.Shared;
 namespace TpSolver.Solver.Modi.PotentialsCalculator;
 
 class PotCalc(
-    Matrix<double> cost,
     AllocationMatrix allocation,
+    Matrix<double> cost,
     double[] RPotential,
     double[] CPotential
-) : PotCalcBase(cost, allocation, RPotential, CPotential)
+) : PotCalcBase(allocation, cost, RPotential, CPotential)
 {
     readonly bool[] RDone = new bool[RPotential.Length];
     readonly bool[] CDone = new bool[CPotential.Length];
