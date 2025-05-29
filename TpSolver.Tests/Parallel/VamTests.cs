@@ -1,6 +1,6 @@
 using Profiling;
 using TpSolver.BfsSearch;
-using TpSolver.Tests.Utils;
+using TpSolver.Tests.Sequential.Utils;
 
 namespace TpSolver.Tests.Parallel;
 
@@ -19,8 +19,8 @@ public class VamTests
         var expected = vamSeq.Search();
         var actual = vamPar.Search();
         var speedup =
-            vamSeq.Profiler[VamBase.Stages.Total].Elapsed
-            / vamPar.Profiler[VamBase.Stages.Total].Elapsed;
+            vamSeq.Profiler[VamBase.Stages.Total].TotalElapsed
+            / vamPar.Profiler[VamBase.Stages.Total].TotalElapsed;
 
         var costSeq = expected.CalcTotalCost(tp.Cost);
         var costPar = actual.CalcTotalCost(tp.Cost);

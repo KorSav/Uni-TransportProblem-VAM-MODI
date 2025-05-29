@@ -1,7 +1,7 @@
 using TpSolver.BfsSearch;
 using TpSolver.Perturbation;
 using TpSolver.Shared;
-using TpSolver.Tests.Utils;
+using TpSolver.Tests.Sequential.Utils;
 using static TpSolver.BfsSearch.VamBase;
 
 namespace TpSolver.Tests.Parallel;
@@ -35,8 +35,8 @@ public class CycleSearcherTests
         var isParSuccess = ep2.TryPerturb(perturbCount);
 
         Assert.Equal(isSeqSuccess, isParSuccess);
-        var seqT = ep.CycleSearcher.Profiler[Stages.Total].Elapsed;
-        var parT = ep2.CycleSearcher.Profiler[Stages.Total].Elapsed;
+        var seqT = ep.CycleSearcher.Profiler[Stages.Total].TotalElapsed;
+        var parT = ep2.CycleSearcher.Profiler[Stages.Total].TotalElapsed;
         var speedup = seqT / parT;
 
         var costSeq = expected.CalcTotalCost(degenerousTp.Cost);

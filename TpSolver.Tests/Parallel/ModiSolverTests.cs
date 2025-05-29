@@ -1,7 +1,7 @@
-using System.Security.Authentication.ExtendedProtection;
 using TpSolver.Shared;
 using TpSolver.Solver.Modi;
-using TpSolver.Tests.Utils;
+using TpSolver.Tests.Sequential.Utils;
+using static TpSolver.Solver.Modi.ModiSolverBase;
 
 namespace TpSolver.Tests.Parallel;
 
@@ -14,17 +14,17 @@ public class ModiSolverTests
     {
         TransportProblem tp = TransportProblem.GenerateRandom(size, size);
 
-        var seq = new ModiSolver(tp);
-        var par = new ModiSolverParallel(tp, new() { MaxDegreeOfParallelism = 6 });
+        var seq = new ModiSolver(tp) { Profiler = new() };
+        var par = new ModiSolverParallel(tp, 6) { Profiler = new() };
 
-        AllocationMatrix? expected = seq.Solve(out int _);
-        AllocationMatrix? actual = par.Solve(out int _);
+        AllocationMatrix? expected = seq.Solve(tp);
+        AllocationMatrix? actual = par.Solve(tp);
         Assert.NotNull(expected);
         Assert.NotNull(actual);
         Assert.Equal(expected.AsEnumerableNBDistinct(), actual.AsEnumerableNBDistinct());
 
-        var seqT = seq.Profiler.Skip(2).First().Elapsed;
-        var parT = par.Profiler.Skip(2).First().Elapsed;
+        var seqT = seq.Profiler[Stages.MinDiffNonBasicCost_Potentials].TotalElapsed;
+        var parT = par.Profiler[Stages.MinDiffNonBasicCost_Potentials].TotalElapsed;
         var speedup = seqT / parT;
         Assert.True(speedup > 1.2, $"Speedup is too small - {speedup}");
         Console.WriteLine($"[Perf modi argmin] Size={size}, S={speedup}");
@@ -37,17 +37,17 @@ public class ModiSolverTests
     {
         TransportProblem tp = TransportProblem.GenerateRandom(size, size);
 
-        var seq = new ModiSolver(tp);
-        var par = new ModiSolverParallel(tp, new() { MaxDegreeOfParallelism = 6 });
+        var seq = new ModiSolver(tp) { Profiler = new() };
+        var par = new ModiSolverParallel(tp, 6) { Profiler = new() };
 
-        AllocationMatrix? expected = seq.Solve(out int _);
-        AllocationMatrix? actual = par.Solve(out int _);
+        AllocationMatrix? expected = seq.Solve(tp);
+        AllocationMatrix? actual = par.Solve(tp);
         Assert.NotNull(expected);
         Assert.NotNull(actual);
         Assert.Equal(expected.AsEnumerableNBDistinct(), actual.AsEnumerableNBDistinct());
 
-        var seqT = seq.Profiler.First().Elapsed;
-        var parT = par.Profiler.First().Elapsed;
+        var seqT = seq.Profiler.First().TotalElapsed;
+        var parT = par.Profiler.First().TotalElapsed;
         var speedup = seqT / parT;
         Assert.True(speedup > 1.2, $"Speedup is too small - {speedup}");
         Console.WriteLine($"[Perf modi solve] Size={size}, S={speedup}");

@@ -2,7 +2,7 @@ using TpSolver.BfsSearch;
 using TpSolver.CycleSearch;
 using TpSolver.Perturbation;
 using TpSolver.Shared;
-using TpSolver.Tests.Utils;
+using TpSolver.Tests.Sequential.Utils;
 using static TpSolver.Perturbation.EpsilonPerturbation;
 
 namespace TpSolver.Tests.Parallel;
@@ -37,8 +37,8 @@ public class EpsilonPerturbationTests
         epPar.CycleSearcher = new CycleSearcherParallel(actual, 6) { Profiler = new() };
 
         Assert.Equal(isSeqSuccess, isParSuccess);
-        var seqT = epSeq.Profiler[Stages.Total].Elapsed;
-        var parT = epPar.Profiler[Stages.Total].Elapsed;
+        var seqT = epSeq.Profiler[Stages.Total].TotalElapsed;
+        var parT = epPar.Profiler[Stages.Total].TotalElapsed;
         var speedup = seqT / parT;
 
         var costSeq = expected.CalcTotalCost(degenerousTp.Cost);

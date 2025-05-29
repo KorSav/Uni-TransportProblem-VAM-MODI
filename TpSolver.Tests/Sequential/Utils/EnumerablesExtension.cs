@@ -1,6 +1,6 @@
 using TpSolver.Shared;
 
-namespace TpSolver.Tests.Utils;
+namespace TpSolver.Tests.Sequential.Utils;
 
 static class EnumerablesExtension
 {

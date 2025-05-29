@@ -1,6 +1,6 @@
 using TpSolver.Shared;
 
-namespace TpSolver.Tests;
+namespace TpSolver.Tests.Sequential;
 
 public class AllocationValueTests
 {

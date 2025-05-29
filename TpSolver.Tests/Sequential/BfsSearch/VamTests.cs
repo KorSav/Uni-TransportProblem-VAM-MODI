@@ -1,8 +1,8 @@
 ﻿using TpSolver.BfsSearch;
 using TpSolver.Shared;
-using TpSolver.Tests.Utils;
+using TpSolver.Tests.Sequential.Utils;
 
-namespace TpSolver.Tests.BfsSearch;
+namespace TpSolver.Tests.Sequential.BfsSearch;
 
 public class VamTests
 {

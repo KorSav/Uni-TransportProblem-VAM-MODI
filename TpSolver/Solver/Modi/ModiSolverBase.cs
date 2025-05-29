@@ -31,7 +31,6 @@ public abstract class ModiSolverBase(TransportProblem tp)
     public AllocationMatrix? Solve(TransportProblem tp)
     {
         using var _ = Profiler?.Measure(Stages.Total) ?? Profiler.NoOp();
-        AllocationMatrix sln;
 
         using (Profiler?.Measure(Stages.BfsSearch) ?? Profiler.NoOp())
             sln = CreateBfsSearcher().Search();
