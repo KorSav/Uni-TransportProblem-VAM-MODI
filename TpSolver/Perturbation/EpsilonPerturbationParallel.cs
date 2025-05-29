@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Profiling;
+using TpSolver.CycleSearch;
 using TpSolver.Shared;
 
 namespace TpSolver.Perturbation;
@@ -12,7 +13,7 @@ class EpsilonPerturbationParallel
     private readonly Matrix<bool> toCheck;
     private readonly int m;
     private readonly int n;
-    private readonly ParallelOptions parOpts;
+    private readonly int parDeg;
     private readonly Point?[] localMins;
 
     public Profiler CycleProfiler { get; }
@@ -21,27 +22,20 @@ class EpsilonPerturbationParallel
     public EpsilonPerturbationParallel(
         AllocationMatrix allocation,
         Matrix<double> cost,
-        ParallelOptions parallelOptions
+        int parallelizationDegree
     )
     {
         this.allocation = allocation;
-        parOpts = parallelOptions;
+        parDeg = parallelizationDegree;
         m = allocation.NRows;
         n = allocation.NCols;
-        cs = new(this.allocation, parOpts);
+        CycleProfiler = new();
+        cs = new(this.allocation, parDeg) { Profiler = CycleProfiler };
         this.cost = cost;
         toCheck = new bool[m, n];
-        localMins = new Point?[parOpts.MaxDegreeOfParallelism];
-        CycleProfiler = cs.Profiler;
+        localMins = new Point?[parDeg];
         Profiler = new();
     }
-
-    public EpsilonPerturbationParallel(
-        AllocationMatrix allocation,
-        double[,] cost,
-        ParallelOptions parallelOptions
-    )
-        : this(allocation, new Matrix<double>(cost), parallelOptions) { }
 
     public bool TryPerturb(int pntCount)
     {
@@ -77,7 +71,7 @@ class EpsilonPerturbationParallel
 
     private Point? ArgminCostInCheckList()
     {
-        Task[] tasks = new Task[parOpts.MaxDegreeOfParallelism];
+        Task[] tasks = new Task[parDeg];
         int baseChunkSize = m * n / tasks.Length;
         int residue = m * n % tasks.Length;
         int curI = 0;

@@ -1,6 +1,7 @@
+using TpSolver.CycleSearch;
 using TpSolver.Shared;
 
-namespace TpSolver.Tests;
+namespace TpSolver.Tests.Sequential;
 
 public class CycleSearcherTests
 {
@@ -15,7 +16,7 @@ public class CycleSearcherTests
         };
         Point pnt = new(2, 3);
 
-        CycleSearcher cs = new(allocations);
+        CycleSearcher cs = new(new(allocations));
         List<Point>? actual = cs.SearchClosed(pnt);
         List<Point> expected = new(4) { pnt };
         Assert.NotNull(actual);
@@ -40,7 +41,7 @@ public class CycleSearcherTests
         };
         Point pnt = new(2, 1);
 
-        CycleSearcher cs = new(allocations);
+        CycleSearcher cs = new(new(allocations));
         List<Point>? actual = cs.SearchClosed(pnt);
         Assert.Null(actual);
     }
@@ -56,7 +57,7 @@ public class CycleSearcherTests
         };
         Point pnt = new(1, 0);
 
-        CycleSearcher cs = new(allocations);
+        CycleSearcher cs = new(new(allocations));
         List<Point>? actual = cs.SearchClosed(pnt);
         List<Point> expected = new(4) { pnt };
         Assert.NotNull(actual);

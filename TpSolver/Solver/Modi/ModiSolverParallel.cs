@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Profiling;
 using TpSolver.BfsSearch;
+using TpSolver.CycleSearch;
 using TpSolver.Perturbation;
 using TpSolver.Shared;
 using TpSolver.Utils;
@@ -29,7 +30,7 @@ public class ModiSolverParallel(TransportProblem tp, ParallelOptions parallelOpt
         if (perturbCount > 0)
         {
             // Deal with degeneracy
-            perturbation = new(sln, tp.Cost, parOpts);
+            perturbation = new(sln, tp.Cost, parOpts.MaxDegreeOfParallelism);
             if (!perturbation.TryPerturb(perturbCount))
                 return null;
         }

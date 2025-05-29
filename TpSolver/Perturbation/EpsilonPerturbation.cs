@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Profiling;
+using TpSolver.CycleSearch;
 using TpSolver.Shared;
 
 namespace TpSolver.Perturbation;
@@ -12,6 +13,7 @@ class EpsilonPerturbation
     private readonly Matrix<bool> toCheck;
     private readonly int m;
     private readonly int n;
+
     public Profiler CycleProfiler { get; }
     public Profiler Profiler { get; }
 
@@ -20,11 +22,11 @@ class EpsilonPerturbation
         this.allocation = allocation;
         m = allocation.NRows;
         n = allocation.NCols;
-        cs = new(this.allocation);
+        Profiler = new();
+        CycleProfiler = new();
+        cs = new(this.allocation) { Profiler = CycleProfiler };
         this.cost = cost;
         toCheck = new bool[m, n];
-        CycleProfiler = cs.Profiler;
-        Profiler = new();
     }
 
     public EpsilonPerturbation(AllocationMatrix allocation, double[,] cost)

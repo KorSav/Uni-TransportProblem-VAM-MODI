@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Profiling;
 using TpSolver.BfsSearch;
+using TpSolver.CycleSearch;
 using TpSolver.Perturbation;
 using TpSolver.Shared;
 

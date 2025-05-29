@@ -1,12 +1,10 @@
 using System.Collections;
 using System.Collections.Concurrent;
-using System.Collections.Frozen;
-using System.Diagnostics;
-using Profiling;
+using TpSolver.Shared;
 
-namespace TpSolver.Shared;
+namespace TpSolver.CycleSearch;
 
-public class CycleSearcherParallel
+public class CycleSearcherParallel : CycleSearcher
 {
     private readonly struct PntParentPair(Point cur, Point? parent)
     {
@@ -19,63 +17,35 @@ public class CycleSearcherParallel
         public readonly HashSet<Point> RowAdjacents = inRow;
         public readonly HashSet<Point> ColAdjacents = inCol;
 
-        public IEnumerator<Point> GetEnumerator()
-        {
-            foreach (var pnt in RowAdjacents)
-                yield return pnt;
-            foreach (var pnt in ColAdjacents)
-                yield return pnt;
-        }
+        public IEnumerator<Point> GetEnumerator() =>
+            RowAdjacents.Concat(ColAdjacents).GetEnumerator();
 
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return GetEnumerator();
-        }
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }
 
-    private readonly AllocationMatrix allocation;
-    private readonly List<Point> cycle;
     private readonly int parDeg;
-    private readonly int workersCount;
+    private int workersCount => parDeg;
 
-    private readonly HashSet<Point> visited = []; // used only by main
-
-    private ConcurrentDictionary<Point, PointAdjacents> nonBasicAdjacents;
+    private readonly ConcurrentDictionary<Point, PointAdjacents> nonBasicAdjacents;
     private readonly ConcurrentDictionary<Point, byte> consideredPoints;
     private ConcurrentQueue<PntParentPair> ptsToConsider;
     private SemaphoreSlim semaphore = new(1);
     private volatile int toBeProcessed;
 
-    public Profiler Profiler { get; }
-
-    public CycleSearcherParallel(AllocationMatrix allocation, ParallelOptions parallelOptions)
+    public CycleSearcherParallel(AllocationMatrix allocation, int parallelizationDegree)
+        : base(allocation)
     {
-        this.allocation = allocation;
-        parDeg = parallelOptions.MaxDegreeOfParallelism;
+        parDeg = parallelizationDegree;
         nonBasicAdjacents = new(parDeg, allocation.NRows + allocation.NCols - 1);
         ptsToConsider = new();
-        workersCount = parDeg - 1;
-        cycle = [];
-        Profiler = new();
         consideredPoints = new();
     }
 
-    public List<Point>? SearchClosed(Point pnt)
-    {
-        // Can search only from non basic cell
-        Debug.Assert(!allocation[pnt].IsBasic);
-        allocation[pnt] = allocation[pnt].ToBasic();
-        SearchBasic(pnt);
-        allocation[pnt] = new(0);
-        if (cycle.Count == 1)
-        {
-            Debug.Assert(cycle[0] == pnt);
-            return null;
-        }
-        return cycle;
-    }
+    protected override Point? GetColNonVisitedFor(Point cur) => GetNonVisitedFor(cur, inRow: false);
 
-    private void PrecalculateAdjacentsInParallel(Point aim)
+    protected override Point? GetRowNonVisitedFor(Point cur) => GetNonVisitedFor(cur, inRow: true);
+
+    protected override void Init(Point aim)
     {
         visited.Clear();
         cycle.Clear();
@@ -94,68 +64,14 @@ public class CycleSearcherParallel
         Task.WaitAll(tasks);
     }
 
-    private void SearchBasic(Point aim)
-    {
-        using var _ = Profiler.Measure("Total");
-        PrecalculateAdjacentsInParallel(aim);
-        Point? next;
-        Point cur = aim;
-        cycle.Add(cur);
-
-        using (Profiler.Measure("Backtrack"))
-        {
-            while (aim != (next = GetNewAdjacent()))
-            {
-                if (next is null)
-                {
-                    if (cycle.Count == 1)
-                        return;
-                    visited.Add(cur);
-                    cycle.RemoveAt(cycle.Count - 1);
-                    cur = cycle[^1];
-                    continue;
-                }
-                cur = next.Value;
-                cycle.Add(cur);
-            }
-        }
-    }
-
-    private Point? GetNewAdjacent()
-    {
-        Debug.Assert(cycle.Count != 0);
-        Point cur = cycle[^1];
-        if (cycle.Count == 1) // searching adjacent for starting point
-            return GetRowNonVisitedFor(cur) ?? GetColNonVisitedFor(cur);
-
-        if (cycle[^2].IRow == cur.IRow) // whether previous was in row
-            return GetColNonVisitedFor(cur);
-        return GetRowNonVisitedFor(cur);
-    }
-
-    private Point? GetColNonVisitedFor(Point cur)
+    private Point? GetNonVisitedFor(Point cur, bool inRow)
     {
         PointAdjacents? adjacents;
         SpinWait sw = new();
         // If used in parallel with workers (slower)
         while (!nonBasicAdjacents.TryGetValue(cur, out adjacents))
             sw.SpinOnce();
-        foreach (var adjacent in adjacents.ColAdjacents)
-        {
-            if (!visited.Contains(adjacent))
-                return adjacent;
-        }
-        return null;
-    }
-
-    private Point? GetRowNonVisitedFor(Point cur)
-    {
-        PointAdjacents? adjacents;
-        SpinWait sw = new();
-        // If used in parallel with workers (slower)
-        while (!nonBasicAdjacents.TryGetValue(cur, out adjacents))
-            sw.SpinOnce();
-        foreach (var adjacent in adjacents.RowAdjacents)
+        foreach (var adjacent in inRow ? adjacents.RowAdjacents : adjacents.ColAdjacents)
         {
             if (!visited.Contains(adjacent))
                 return adjacent;
@@ -169,7 +85,7 @@ public class CycleSearcherParallel
         {
             semaphore.Wait();
             if (!ptsToConsider.TryDequeue(out PntParentPair queueItem))
-            { // spurious wake-up or race condition
+            { // go here on termination
                 continue;
             }
             if (!consideredPoints.TryAdd(queueItem.Cur, 0))
@@ -185,7 +101,7 @@ public class CycleSearcherParallel
                 Interlocked.Decrement(ref toBeProcessed);
                 continue;
             }
-            foreach (var next in adjacents)
+            foreach (var next in adjacents.RowAdjacents.Concat(adjacents))
             {
                 if (consideredPoints.ContainsKey(next))
                     continue; // avoid cyclic adjacent search
@@ -195,7 +111,7 @@ public class CycleSearcherParallel
             }
             Interlocked.Decrement(ref toBeProcessed);
         }
-        semaphore.Release(workersCount); // should release all waiting workers, after race condition in while clause
+        semaphore.Release(workersCount); // should release all waiting workers on termination
     }
 
     private List<Point> GetAllNonBasicInRow(Point cur)

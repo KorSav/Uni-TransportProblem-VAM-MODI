@@ -2,6 +2,7 @@ using TpSolver.BfsSearch;
 using TpSolver.Perturbation;
 using TpSolver.Shared;
 using TpSolver.Tests.Utils;
+using static TpSolver.BfsSearch.VamBase;
 
 namespace TpSolver.Tests.Parallel;
 
@@ -10,6 +11,7 @@ public class CycleSearcherTests
     [Theory]
     [InlineData(300)]
     [InlineData(400)]
+    [InlineData(600)]
     public void Search_ShouldBeCorrect_SquareTP(int size)
     {
         TPValueLimits limits = new(
@@ -27,16 +29,12 @@ public class CycleSearcherTests
         var ep = new EpsilonPerturbation(expected, degenerousTp.Cost);
         var isSeqSuccess = ep.TryPerturb(perturbCount);
 
-        var ep2 = new EpsilonPerturbationParallel(
-            actual,
-            degenerousTp.Cost,
-            new() { MaxDegreeOfParallelism = 6 }
-        );
+        var ep2 = new EpsilonPerturbationParallel(actual, degenerousTp.Cost, 6);
         var isParSuccess = ep2.TryPerturb(perturbCount);
 
         Assert.Equal(isSeqSuccess, isParSuccess);
-        var seqT = ep.CycleProfiler.First().Elapsed;
-        var parT = ep2.CycleProfiler.First().Elapsed;
+        var seqT = ep.CycleProfiler[Stages.Total].Elapsed;
+        var parT = ep2.CycleProfiler[Stages.Total].Elapsed;
         var speedup = seqT / parT;
 
         var costSeq = expected.CalcTotalCost(degenerousTp.Cost);

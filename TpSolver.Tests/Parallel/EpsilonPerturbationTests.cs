@@ -27,11 +27,7 @@ public class EpsilonPerturbationTests
         var ep = new EpsilonPerturbation(expected, degenerousTp.Cost);
         var isSeqSuccess = ep.TryPerturb(perturbCount);
 
-        var ep2 = new EpsilonPerturbationParallel(
-            actual,
-            degenerousTp.Cost,
-            new() { MaxDegreeOfParallelism = 6 }
-        );
+        var ep2 = new EpsilonPerturbationParallel(actual, degenerousTp.Cost, 6);
         var isParSuccess = ep2.TryPerturb(perturbCount);
 
         Assert.Equal(isSeqSuccess, isParSuccess);
