@@ -26,7 +26,7 @@ public class VamTests
             { 10, 1, 0, 0 },
         };
 
-        var vam = new VamSeq(new(cost, supply, demand, true));
+        var vam = new VamSeq(new(cost, supply, demand, shouldBalance: false));
         AllocationMatrix actual = vam.Search();
         Assert.Equal(expected.AsEnumerable(), actual.AsEnumerable());
     }
@@ -51,7 +51,7 @@ public class VamTests
             { 0, 0, 10 },
         };
 
-        var vam = new VamSeq(new(cost, supply, demand, true));
+        var vam = new VamSeq(new(cost, supply, demand));
         AllocationMatrix actual = vam.Search();
         Assert.Equal(expected.AsEnumerable(), actual.AsEnumerable());
     }

@@ -94,7 +94,7 @@ public class ModiTests
             }
         );
 
-        TransportProblem tp = new(cost, supply, demand, true);
+        TransportProblem tp = new(cost, supply, demand);
         AllocationMatrix? actual = new ModiSolverSeq(tp).Solve();
         Assert.NotNull(actual);
         Assert.Equal(expected.AsEnumerableNBDistinct(), actual.AsEnumerableNBDistinct());
@@ -123,7 +123,7 @@ public class ModiTests
             }
         );
 
-        TransportProblem tp = new(cost, supply, demand, true);
+        TransportProblem tp = new(cost, supply, demand);
         AllocationMatrix? actual = new ModiSolverSeq(tp).Solve();
         Assert.NotNull(actual);
         Assert.Equal(expected.AsEnumerable(), actual.AsEnumerable());
@@ -141,7 +141,7 @@ public class ModiTests
         int[] supply = [12, 17, 11];
         int[] demand = [10, 10, 10, 10];
 
-        VamSeq vam = new(new(cost, supply, demand, true));
+        VamSeq vam = new(new(cost, supply, demand));
         AllocationMatrix bfs = vam.Search(); // was considered in previous tests
 
         TransportProblem tp = new(cost, supply, demand);

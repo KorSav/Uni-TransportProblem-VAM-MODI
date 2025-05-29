@@ -5,20 +5,23 @@ namespace TpSolver;
 public class TransportProblem : Matrix<double>
 {
     public Matrix<double> Cost => data;
-    public int[] Supply { get; private set; } = null!;
-    public int[] Demand { get; private set; } = null!;
-
-    private TransportProblem()
-        : base(null!) { }
+    public int[] Supply { get; private set; }
+    public int[] Demand { get; private set; }
 
     /// <summary>
     /// Makes copies of all arrays if not balanced problem provided.
     /// </summary>
     public TransportProblem(Matrix<double> cost, int[] supply, int[] demand)
-        : this(cost, supply, demand, true) => BalanceIfNecessary(isSpaceReserved: false);
+        : this(cost, supply, demand, shouldBalance: true, isPlaceReserved: false) { }
 
     // for testing purposes
-    internal TransportProblem(Matrix<double> cost, int[] supply, int[] demand, bool noBalancing)
+    internal TransportProblem(
+        Matrix<double> cost,
+        int[] supply,
+        int[] demand,
+        bool shouldBalance,
+        bool isPlaceReserved = true
+    )
         : base(cost)
     {
         if (m != supply.Length)
@@ -31,10 +34,12 @@ public class TransportProblem : Matrix<double>
             );
         Supply = supply;
         Demand = demand;
+        if (shouldBalance)
+            BalanceIfNecessary(isPlaceReserved);
     }
 
     /// <returns>Whether balancing was made</returns>
-    private bool BalanceIfNecessary(bool isSpaceReserved = true)
+    private bool BalanceIfNecessary(bool isSpaceReserved)
     {
         int totalSupply = 0;
         int totalDemand = 0;
@@ -79,10 +84,8 @@ public class TransportProblem : Matrix<double>
         return true;
     }
 
-    public static TransportProblem GenerateRandom(int NSupply, int NDemand)
-    {
-        return GenerateRandom(NSupply, NDemand, new());
-    }
+    public static TransportProblem GenerateRandom(int NSupply, int NDemand) =>
+        GenerateRandom(NSupply, NDemand, new());
 
     public static TransportProblem GenerateRandom(int NSupply, int NDemand, TPValueLimits lim)
     {
@@ -101,8 +104,6 @@ public class TransportProblem : Matrix<double>
             return lim.CostLowerBound + d * rnd.NextDouble();
         });
 
-        TransportProblem tp = new(cost, supply, demand, true); // TODO: strange TP balancing
-        tp.BalanceIfNecessary(); // without arrays realloc
-        return tp;
+        return new(cost, supply, demand, shouldBalance: true, isPlaceReserved: true);
     }
 }
