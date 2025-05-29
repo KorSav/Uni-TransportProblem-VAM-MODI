@@ -1,4 +1,4 @@
-﻿namespace Profiler.Tests;
+﻿namespace Profiling.Tests;
 
 public class ProfilerTests
 {
@@ -6,7 +6,7 @@ public class ProfilerTests
     public void StartStage_ShouldStartTimer_AndStopWhenScopeEnds()
     {
         var sleepTime = TimeSpan.FromMilliseconds(10);
-        var expected = new StageMetrics("test", sleepTime);
+        var expected = new StageMetrics("test", sleepTime, 1);
 
         Profiler profiler = new();
         using (profiler.Measure("test"))
@@ -14,7 +14,8 @@ public class ProfilerTests
 
         var actual = profiler.Single();
         Assert.Equal(expected.Name, actual.Name);
-        Assert.True(expected.Elapsed < actual.Elapsed);
+        Assert.Equal(expected.HitCount, actual.HitCount);
+        Assert.True(expected.TotalElapsed < actual.TotalElapsed);
     }
 
     [Theory]
@@ -24,10 +25,10 @@ public class ProfilerTests
         var sleepTime = TimeSpan.FromMilliseconds(sleepTimeMs);
         List<StageMetrics> expected = new(size);
         for (int i = 0; i < size; i++)
-            expected.Add(new($"Stage_{Guid.NewGuid()}", sleepTime));
+            expected.Add(new($"Stage_{Guid.NewGuid()}", sleepTime, 1));
 
         Profiler profiler = new();
-        foreach (var (name, _) in expected)
+        foreach (var (name, _, _) in expected)
             using (profiler.Measure(name))
                 Thread.Sleep(sleepTime);
 
@@ -39,10 +40,13 @@ public class ProfilerTests
             .ToList()
             .ForEach(
                 (item) =>
+                {
                     Assert.True(
-                        item.act.Elapsed >= item.exp.Elapsed,
-                        $"Element at index {item.i}: {item.act.Elapsed} is less than {item.exp.Elapsed}"
-                    )
+                        item.act.TotalElapsed >= item.exp.TotalElapsed,
+                        $"Element at index {item.i}: {item.act.TotalElapsed} is less than {item.exp.TotalElapsed}"
+                    );
+                    Assert.Equal(item.exp.HitCount, item.act.HitCount);
+                }
             );
     }
 
@@ -50,7 +54,7 @@ public class ProfilerTests
     public void StartStage_ShouldSupportNestedStages()
     {
         var sleepTime = TimeSpan.FromMilliseconds(50);
-        List<StageMetrics> expected = [new("outer", sleepTime * 2), new("inner", sleepTime)];
+        List<StageMetrics> expected = [new("outer", sleepTime * 2, 1), new("inner", sleepTime, 1)];
 
         Profiler profiler = new();
         using (profiler.Measure("outer"))
@@ -69,10 +73,13 @@ public class ProfilerTests
             .ToList()
             .ForEach(
                 (item) =>
+                {
                     Assert.True(
-                        item.act.Elapsed >= item.exp.Elapsed,
-                        $"Element at index {item.i}: {item.act.Elapsed} is less than {item.exp.Elapsed}"
-                    )
+                        item.act.TotalElapsed >= item.exp.TotalElapsed,
+                        $"Element at index {item.i}: {item.act.TotalElapsed} is less than {item.exp.TotalElapsed}"
+                    );
+                    Assert.Equal(item.exp.HitCount, item.act.HitCount);
+                }
             );
     }
 }

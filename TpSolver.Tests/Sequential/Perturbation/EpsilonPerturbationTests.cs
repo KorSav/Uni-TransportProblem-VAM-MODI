@@ -1,8 +1,8 @@
 using TpSolver.Perturbation;
 using TpSolver.Shared;
-using TpSolver.Tests.Utils;
+using TpSolver.Tests.Sequential.Utils;
 
-namespace TpSolver.Tests.Perturbation;
+namespace TpSolver.Tests.Sequential.Perturbation;
 
 public class EpsilonPerturbationTests
 {

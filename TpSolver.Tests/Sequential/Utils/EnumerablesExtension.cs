@@ -1,6 +1,6 @@
 using TpSolver.Shared;
 
-namespace TpSolver.Tests.Utils;
+namespace TpSolver.Tests.Sequential.Utils;
 
 static class EnumerablesExtension
 {
@@ -13,8 +13,8 @@ static class EnumerablesExtension
         for (int j = 0; j < matrix.NCols; j++)
             yield return matrix[i, j].IsBasic switch
             {
-                true => -1,
-                false => matrix[i, j],
+                true => matrix[i, j],
+                false => -1,
             };
     }
 

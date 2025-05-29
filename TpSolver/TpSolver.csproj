@@ -13,4 +13,8 @@
     </AssemblyAttribute>
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Profiling\Profiling.csproj" />
+  </ItemGroup>
+
 </Project>

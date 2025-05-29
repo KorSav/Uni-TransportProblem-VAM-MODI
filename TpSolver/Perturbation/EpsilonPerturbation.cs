@@ -1,60 +1,74 @@
 using System.Diagnostics;
+using Profiling;
+using TpSolver.CycleSearch;
 using TpSolver.Shared;
 
 namespace TpSolver.Perturbation;
 
 public class EpsilonPerturbation
 {
-    private readonly AllocationMatrix allocation;
-    private readonly double[,] cost;
-    private readonly CycleSearcher cs;
-    private readonly bool[,] toCheck;
-    private readonly int m;
-    private readonly int n;
+    protected readonly AllocationMatrix allocation;
+    protected readonly Matrix<double> cost;
+    protected readonly Matrix<bool> toCheck;
+    protected readonly int m;
+    protected readonly int n;
 
-    public EpsilonPerturbation(AllocationMatrix allocation, double[,] cost)
+    public virtual CycleSearcher CycleSearcher { get; set; }
+    public Profiler? Profiler { get; set; }
+
+    public static class Stages
+    {
+        public const string Total = nameof(Total);
+        public const string Argmin = nameof(Argmin);
+        public const string CycleSearch = nameof(CycleSearch);
+    }
+
+    public EpsilonPerturbation(AllocationMatrix allocation, Matrix<double> cost)
     {
         this.allocation = allocation;
         m = allocation.NRows;
         n = allocation.NCols;
-        cs = new(this.allocation);
+        CycleSearcher = new(this.allocation);
         this.cost = cost;
         toCheck = new bool[m, n];
     }
 
     public bool TryPerturb(int pntCount)
     {
+        using var _ = Profiler?.Measure(Stages.Total) ?? Profiler.NoOp();
         Debug.Assert(pntCount > 0);
         if (pntCount <= 0)
             return true;
 
-        for (int i = 0; i < m; i++)
-        for (int j = 0; j < n; j++)
-            toCheck[i, j] = !allocation[i, j].IsBasic;
+        toCheck.Fill((p) => !allocation[p].IsBasic);
         Point? pntMin;
         List<Point>? cycle;
         int perturbedCount = 0;
-        int checkedCount = 0;
+        int cyclesFound = 0;
         for (; perturbedCount < pntCount; perturbedCount++)
         {
-            pntMin = null;
-            checkedCount = toCheck.Cast<bool>().Count(p => p);
             do
             {
-                pntMin = ArgminCostInCheckList();
+                using (Profiler?.Measure(Stages.Argmin) ?? Profiler.NoOp())
+                    pntMin = ArgminCostInCheckList();
                 if (pntMin is null) // all non basic cells were tried
                     return false;
-                cycle = cs.SearchClosed(pntMin.Value);
-                if (cycle is not null) // dont check points that are known to have cycle
-                    toCheck[pntMin.Value.i, pntMin.Value.j] = false;
+
+                using (Profiler?.Measure(Stages.CycleSearch) ?? Profiler.NoOp())
+                    cycle = CycleSearcher.SearchClosed(pntMin.Value);
+                if (cycle is not null)
+                { // dont check points that are known to have cycle
+                    toCheck[pntMin.Value] = false;
+                    cyclesFound++;
+                }
             } while (cycle is not null);
             allocation[pntMin.Value] = allocation[pntMin.Value].ToBasic();
-            toCheck[pntMin.Value.i, pntMin.Value.j] = false;
+            toCheck[pntMin.Value] = false;
         }
         return true;
     }
 
-    private Point? ArgminCostInCheckList()
+    protected virtual Point? ArgminCostInCheckList()
     {
         Point? pnt = null;
         double costMin = double.PositiveInfinity;

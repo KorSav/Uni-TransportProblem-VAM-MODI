@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics;
 
-namespace Profiler;
+namespace Profiling;
 
 class StageTimer(string name)
 {

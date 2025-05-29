@@ -1,8 +1,8 @@
 using System.Collections;
 
-namespace Profiler;
+namespace Profiling;
 
-public record StageMetrics(string Name, TimeSpan Elapsed);
+public record StageMetrics(string Name, TimeSpan TotalElapsed, int HitCount);
 
 /// <summary>
 /// A stage-based profiler for measuring cumulative execution times of named code regions.
@@ -13,6 +13,7 @@ public record StageMetrics(string Name, TimeSpan Elapsed);
 public class Profiler : IEnumerable<StageMetrics>
 {
     private readonly Dictionary<string, StageTimer> stages = [];
+    private readonly Dictionary<string, int> hitCounts = [];
     private readonly List<string> stagesOrder = [];
 
     /// <summary>
@@ -25,20 +26,26 @@ public class Profiler : IEnumerable<StageMetrics>
     public IDisposable Measure(string name)
     {
         if (stages.TryGetValue(name, out StageTimer? value))
+        {
+            hitCounts[name]++;
             return new StageScope(value);
+        }
 
         StageTimer st = new(name);
         stages.Add(name, st);
+        hitCounts[name] = 1;
         stagesOrder.Add(name);
         return new StageScope(st);
     }
 
+    public StageMetrics this[string name] => new(name, stages[name].TotalElapsed, hitCounts[name]);
+
     public IEnumerator<StageMetrics> GetEnumerator()
     {
-        foreach (var stageName in stagesOrder)
+        foreach (var name in stagesOrder)
         {
-            StageTimer st = stages[stageName];
-            yield return new(stageName, st.TotalElapsed);
+            StageTimer st = stages[name];
+            yield return new(name, st.TotalElapsed, hitCounts[name]);
         }
     }
 
@@ -58,5 +65,12 @@ public class Profiler : IEnumerable<StageMetrics>
         }
 
         public void Dispose() => st.Stop();
+    }
+
+    public static IDisposable NoOp() => new NoOpDisposable();
+
+    private class NoOpDisposable : IDisposable
+    {
+        public void Dispose() { }
     }
 }

@@ -1,7 +1,7 @@
 using TpSolver.Shared;
-using TpSolver.Tests.Utils;
+using TpSolver.Tests.Sequential.Utils;
 
-namespace TpSolver.Tests;
+namespace TpSolver.Tests.Sequential;
 
 public class AllocationMatrixTests
 {

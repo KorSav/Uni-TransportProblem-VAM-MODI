@@ -19,7 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Profiler\Profiler.csproj" />
+    <ProjectReference Include="..\Profiling\Profiling.csproj" />
   </ItemGroup>
 
 </Project>
