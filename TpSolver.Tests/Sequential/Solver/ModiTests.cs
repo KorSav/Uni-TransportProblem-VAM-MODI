@@ -3,7 +3,7 @@ using TpSolver.Shared;
 using TpSolver.Solver.Modi;
 using TpSolver.Solver.Modi.PotentialsCalculator;
 using TpSolver.Tests.Sequential.Utils;
-using static TpSolver.Solver.Modi.ModiSolverBase;
+using static TpSolver.Solver.Modi.ModiSolver;
 
 namespace TpSolver.Tests.Sequential.Solver;
 
@@ -34,7 +34,7 @@ public class ModiTests
         double[] RPotential = new double[4];
         double[] CPotential = new double[4];
 
-        PotCalc pc = new(am, cost, RPotential, CPotential);
+        PotCalcSeq pc = new(am, cost, RPotential, CPotential);
         pc.CalcPotentials();
 
         Assert.Equal(RExpected, RPotential);
@@ -64,7 +64,7 @@ public class ModiTests
         double[] RPotential = new double[3];
         double[] CPotential = new double[4];
 
-        PotCalc pc = new(am, cost, RPotential, CPotential);
+        PotCalcSeq pc = new(am, cost, RPotential, CPotential);
         pc.CalcPotentials();
 
         Assert.Equal(RExpected, RPotential);
@@ -95,7 +95,7 @@ public class ModiTests
         );
 
         TransportProblem tp = new(cost, supply, demand, true);
-        AllocationMatrix? actual = new ModiSolver(tp).Solve(tp);
+        AllocationMatrix? actual = new ModiSolverSeq(tp).Solve();
         Assert.NotNull(actual);
         Assert.Equal(expected.AsEnumerableNBDistinct(), actual.AsEnumerableNBDistinct());
     }
@@ -124,7 +124,7 @@ public class ModiTests
         );
 
         TransportProblem tp = new(cost, supply, demand, true);
-        AllocationMatrix? actual = new ModiSolver(tp).Solve(tp);
+        AllocationMatrix? actual = new ModiSolverSeq(tp).Solve();
         Assert.NotNull(actual);
         Assert.Equal(expected.AsEnumerable(), actual.AsEnumerable());
     }
@@ -141,12 +141,12 @@ public class ModiTests
         int[] supply = [12, 17, 11];
         int[] demand = [10, 10, 10, 10];
 
-        Vam vam = new(new(cost, supply, demand, true));
+        VamSeq vam = new(new(cost, supply, demand, true));
         AllocationMatrix bfs = vam.Search(); // was considered in previous tests
 
         TransportProblem tp = new(cost, supply, demand);
-        ModiSolver ms = new(tp) { Profiler = new() };
-        AllocationMatrix? optimal = ms.Solve(tp);
+        ModiSolverSeq ms = new(tp) { Profiler = new() };
+        AllocationMatrix? optimal = ms.Solve();
 
         Assert.NotNull(optimal);
         Assert.Equal(1, ms.Profiler[Stages.Pivot].HitCount);
@@ -182,8 +182,8 @@ public class ModiTests
         );
 
         TransportProblem tp = new(cost, supply, demand);
-        ModiSolver ms = new(tp) { Profiler = new() };
-        AllocationMatrix? actual = ms.Solve(tp);
+        ModiSolverSeq ms = new(tp) { Profiler = new() };
+        AllocationMatrix? actual = ms.Solve();
         Assert.NotNull(actual);
         Assert.True(ms.Profiler[Stages.Pivot].HitCount >= 1);
         Assert.True(actual.CalcTotalCost(cost) <= paperResult.CalcTotalCost(cost));
@@ -199,8 +199,8 @@ public class ModiTests
     {
         TransportProblem tp = TransportProblem.GenerateRandom(size, size);
 
-        ModiSolver ms = new(tp) { Profiler = new() };
-        AllocationMatrix? actual = ms.Solve(tp);
+        ModiSolverSeq ms = new(tp) { Profiler = new() };
+        AllocationMatrix? actual = ms.Solve();
         Assert.NotNull(actual);
         Assert.True(ms.Profiler[Stages.Pivot].HitCount >= 1);
         Assert.True(AllocationValidation.IsDemandPerColCorrect(actual, tp.Demand));
@@ -230,8 +230,8 @@ public class ModiTests
         }
 
         TransportProblem tp = new(cost, supply, demand);
-        ModiSolver ms = new(tp) { Profiler = new() };
-        AllocationMatrix? actual = ms.Solve(tp);
+        ModiSolverSeq ms = new(tp) { Profiler = new() };
+        AllocationMatrix? actual = ms.Solve();
         Assert.NotNull(actual);
         Assert.True(ms.Profiler[Stages.Pivot].HitCount >= 1);
         Assert.True(AllocationValidation.IsDemandPerColCorrect(actual, demand));

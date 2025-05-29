@@ -7,8 +7,7 @@ using TpSolver.Utils;
 
 namespace TpSolver.Solver.Modi;
 
-public class ModiSolverParallel(TransportProblem tp, int maxDegreeOfParallelism)
-    : ModiSolverBase(tp)
+public class ModiSolverParallel(TransportProblem tp, int maxDegreeOfParallelism) : ModiSolver(tp)
 {
     protected int parDeg = maxDegreeOfParallelism;
 
@@ -52,7 +51,7 @@ public class ModiSolverParallel(TransportProblem tp, int maxDegreeOfParallelism)
         return new(pntMin.Value, min);
     }
 
-    protected override VamBase CreateBfsSearcher() => new VamParallel(tp, parDeg);
+    protected override Vam CreateBfsSearcher() => new VamParallel(tp, parDeg);
 
     protected override CycleSearcher CreateCycleSearcher(AllocationMatrix am) =>
         new CycleSearcherParallel(am, parDeg);
@@ -62,7 +61,7 @@ public class ModiSolverParallel(TransportProblem tp, int maxDegreeOfParallelism)
         Matrix<double> cost
     ) => new EpsilonPerturbationParallel(am, cost, parDeg);
 
-    private protected override PotCalcBase CreatePotentialsCalculator(
+    private protected override PotCalc CreatePotentialsCalculator(
         AllocationMatrix am,
         Matrix<double> cost,
         double[] RPotential,

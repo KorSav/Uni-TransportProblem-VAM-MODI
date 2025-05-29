@@ -1,106 +1,95 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using Profiling;
 using TpSolver.Shared;
 
 namespace TpSolver.BfsSearch;
 
-public class Vam : VamBase
+public abstract class Vam
 {
+    protected readonly int m;
+    protected readonly int n;
+    protected readonly AllocationMatrix allocation;
+    protected readonly bool[] rowDone; // or supply
+    protected readonly bool[] colDone; // or demand
+    protected readonly TransportProblem tp;
+    protected readonly int[] supply; // copies that will be modified
+    protected readonly int[] demand;
     protected readonly double[] rowPenalty;
     protected readonly double[] colPenalty;
 
-    public Vam(TransportProblem tp)
-        : base(tp)
+    public Profiler? Profiler { get; set; }
+
+    public static class Stages
     {
+        public const string Total = nameof(Total);
+        public const string ArgmaxPenalty = nameof(ArgmaxPenalty);
+        public const string Argmin = nameof(Argmin);
+    }
+
+    protected Vam(TransportProblem tp)
+    {
+        this.tp = tp;
+        supply = (int[])tp.Supply.Clone();
+        demand = (int[])tp.Demand.Clone();
+
+        m = supply.Length;
+        n = demand.Length;
+        allocation = new(new int[m, n]);
+
+        rowDone = new bool[m];
+        colDone = new bool[n];
+
         rowPenalty = new double[m];
         colPenalty = new double[n];
     }
 
-    protected override int ArgmaxPenalty(out bool isRow)
+    public AllocationMatrix Search()
     {
-        double maxPenalty = -1;
-        int idx = -1;
+        int idx;
+        bool isRow;
+        Point min;
 
-        for (int i = 0; i < m; i++)
+        using var _ = Profiler?.Measure(Stages.Total) ?? Profiler.NoOp();
+        int doneCount = 0;
+        while (doneCount != rowDone.Length + colDone.Length)
         {
-            if (rowDone[i])
-                continue;
-            rowPenalty[i] = CalcRowPenalty(i);
-            Debug.Assert(rowPenalty[i] >= 0);
-            if (rowPenalty[i] > maxPenalty)
+            using (Profiler?.Measure(Stages.ArgmaxPenalty) ?? Profiler.NoOp())
+                idx = ArgmaxPenalty(out isRow);
+            using (Profiler?.Measure(Stages.Argmin))
+                min = isRow ? ArgminRowCost(idx) : ArgminColCost(idx);
+
+            // Allocate maximally allowed
+            int maxAlloc = Math.Min(supply[min.IRow], demand[min.ICol]);
+            allocation[min] = new(maxAlloc);
+            supply[min.IRow] -= maxAlloc;
+            demand[min.ICol] -= maxAlloc;
+
+            // Update done lists
+            if (supply[min.IRow] == 0)
             {
-                maxPenalty = rowPenalty[i];
-                idx = i;
+                rowDone[min.IRow] = true;
+                doneCount++;
+            }
+            if (demand[min.ICol] == 0)
+            {
+                colDone[min.ICol] = true;
+                doneCount++;
             }
         }
-
-        for (int j = 0; j < n; j++)
-        {
-            if (colDone[j])
-                continue;
-            colPenalty[j] = CalcColPenalty(j);
-            Debug.Assert(colPenalty[j] >= 0);
-            if (colPenalty[j] > maxPenalty)
-            {
-                maxPenalty = colPenalty[j];
-                idx = m + j;
-            }
-        }
-        Debug.Assert(maxPenalty >= 0); // 0 is possible if one cost remained nondone
-
-        isRow = idx < m;
-        return isRow switch
-        {
-            true => idx,
-            false => idx - m,
-        };
+        return allocation;
     }
 
-    protected override Point ArgminColCost(int j)
-    {
-        double minCost = double.PositiveInfinity;
-        int res_i = -1;
-        for (int i = 0; i < m; i++)
-        {
-            if (rowDone[i])
-                continue;
-            if (tp.Cost[i, j] < minCost)
-            {
-                minCost = tp.Cost[i, j];
-                res_i = i;
-            }
-        }
-        return new(res_i, j);
-    }
-
-    protected override Point ArgminRowCost(int i)
-    {
-        double minCost = double.PositiveInfinity;
-        int res_j = -1;
-        for (int j = 0; j < n; j++)
-        {
-            if (colDone[j])
-                continue;
-            if (tp.Cost[i, j] < minCost)
-            {
-                minCost = tp.Cost[i, j];
-                res_j = j;
-            }
-        }
-        return new(i, res_j);
-    }
+    protected abstract int ArgmaxPenalty(out bool isRow);
+    protected abstract Point ArgminRowCost(int i);
+    protected abstract Point ArgminColCost(int j);
 
     protected double CalcColPenalty(int j)
     {
         double min1 = double.PositiveInfinity;
         double min2 = double.PositiveInfinity;
         for (int i = 0; i < m; i++)
-        {
             if (!rowDone[i])
-            {
                 UpdateMins(ref min1, ref min2, tp.Cost[i, j]);
-            }
-        }
         return CalcPenalty(min1, min2);
     }
 
@@ -109,12 +98,8 @@ public class Vam : VamBase
         double min1 = double.PositiveInfinity;
         double min2 = double.PositiveInfinity;
         for (int j = 0; j < n; j++)
-        {
             if (!colDone[j])
-            {
                 UpdateMins(ref min1, ref min2, tp.Cost[i, j]);
-            }
-        }
         return CalcPenalty(min1, min2);
     }
 

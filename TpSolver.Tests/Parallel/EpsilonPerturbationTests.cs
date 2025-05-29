@@ -22,7 +22,7 @@ public class EpsilonPerturbationTests
         );
         TransportProblem degenerousTp = TransportProblem.GenerateRandom(size, size, limits);
 
-        var expected = new Vam(degenerousTp).Search();
+        var expected = new VamSeq(degenerousTp).Search();
         AllocationMatrix actual = new(expected);
         int perturbCount = actual.NRows + actual.NCols - 1 - actual.Count(a => a.IsBasic);
 

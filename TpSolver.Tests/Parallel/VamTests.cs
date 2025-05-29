@@ -14,13 +14,13 @@ public class VamTests
     {
         TransportProblem tp = TransportProblem.GenerateRandom(size, size);
 
-        var vamSeq = new Vam(tp) { Profiler = new() };
+        var vamSeq = new VamSeq(tp) { Profiler = new() };
         var vamPar = new VamParallel(tp, 6) { Profiler = new() };
         var expected = vamSeq.Search();
         var actual = vamPar.Search();
         var speedup =
-            vamSeq.Profiler[VamBase.Stages.Total].TotalElapsed
-            / vamPar.Profiler[VamBase.Stages.Total].TotalElapsed;
+            vamSeq.Profiler[Vam.Stages.Total].TotalElapsed
+            / vamPar.Profiler[Vam.Stages.Total].TotalElapsed;
 
         var costSeq = expected.CalcTotalCost(tp.Cost);
         var costPar = actual.CalcTotalCost(tp.Cost);
@@ -38,7 +38,7 @@ public class VamTests
     {
         TransportProblem tp = TransportProblem.GenerateRandom(m, n);
 
-        var vamSeq = new Vam(tp);
+        var vamSeq = new VamSeq(tp);
         var vamPar = new VamParallel(tp, 6);
         var expected = vamSeq.Search();
         var actual = vamPar.Search();

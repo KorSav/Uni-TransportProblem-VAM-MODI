@@ -10,7 +10,7 @@ class PotCalcParallel(
     double[] RPotential,
     double[] CPotential,
     int parDeq
-) : PotCalcBase(allocation, cost, RPotential, CPotential)
+) : PotCalc(allocation, cost, RPotential, CPotential)
 {
     readonly ConcurrentBag<int> RDone = [];
     readonly ConcurrentBag<int> CDone = [];

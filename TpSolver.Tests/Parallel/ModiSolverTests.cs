@@ -1,7 +1,7 @@
 using TpSolver.Shared;
 using TpSolver.Solver.Modi;
 using TpSolver.Tests.Sequential.Utils;
-using static TpSolver.Solver.Modi.ModiSolverBase;
+using static TpSolver.Solver.Modi.ModiSolver;
 
 namespace TpSolver.Tests.Parallel;
 
@@ -14,11 +14,11 @@ public class ModiSolverTests
     {
         TransportProblem tp = TransportProblem.GenerateRandom(size, size);
 
-        var seq = new ModiSolver(tp) { Profiler = new() };
+        var seq = new ModiSolverSeq(tp) { Profiler = new() };
         var par = new ModiSolverParallel(tp, 6) { Profiler = new() };
 
-        AllocationMatrix? expected = seq.Solve(tp);
-        AllocationMatrix? actual = par.Solve(tp);
+        AllocationMatrix? expected = seq.Solve();
+        AllocationMatrix? actual = par.Solve();
         Assert.NotNull(expected);
         Assert.NotNull(actual);
         Assert.Equal(expected.AsEnumerableNBDistinct(), actual.AsEnumerableNBDistinct());
@@ -37,11 +37,11 @@ public class ModiSolverTests
     {
         TransportProblem tp = TransportProblem.GenerateRandom(size, size);
 
-        var seq = new ModiSolver(tp) { Profiler = new() };
+        var seq = new ModiSolverSeq(tp) { Profiler = new() };
         var par = new ModiSolverParallel(tp, 6) { Profiler = new() };
 
-        AllocationMatrix? expected = seq.Solve(tp);
-        AllocationMatrix? actual = par.Solve(tp);
+        AllocationMatrix? expected = seq.Solve();
+        AllocationMatrix? actual = par.Solve();
         Assert.NotNull(expected);
         Assert.NotNull(actual);
         Assert.Equal(expected.AsEnumerableNBDistinct(), actual.AsEnumerableNBDistinct());
