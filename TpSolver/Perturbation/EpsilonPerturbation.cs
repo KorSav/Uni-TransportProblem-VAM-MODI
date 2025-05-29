@@ -5,35 +5,37 @@ using TpSolver.Shared;
 
 namespace TpSolver.Perturbation;
 
-class EpsilonPerturbation
+public class EpsilonPerturbation
 {
-    private readonly AllocationMatrix allocation;
-    private readonly Matrix<double> cost;
-    private readonly CycleSearcher cs;
-    private readonly Matrix<bool> toCheck;
-    private readonly int m;
-    private readonly int n;
+    protected readonly AllocationMatrix allocation;
+    protected readonly Matrix<double> cost;
+    protected readonly Matrix<bool> toCheck;
+    protected readonly int m;
+    protected readonly int n;
 
-    public Profiler CycleProfiler { get; }
-    public Profiler Profiler { get; }
+    public virtual CycleSearcher CycleSearcher { get; set; }
+    public Profiler? Profiler { get; set; }
+
+    public static class Stages
+    {
+        public const string Total = nameof(Total);
+        public const string Argmin = nameof(Argmin);
+        public const string CycleSearch = nameof(CycleSearch);
+    }
 
     public EpsilonPerturbation(AllocationMatrix allocation, Matrix<double> cost)
     {
         this.allocation = allocation;
         m = allocation.NRows;
         n = allocation.NCols;
-        Profiler = new();
-        CycleProfiler = new();
-        cs = new(this.allocation) { Profiler = CycleProfiler };
+        CycleSearcher = new(this.allocation);
         this.cost = cost;
         toCheck = new bool[m, n];
     }
 
-    public EpsilonPerturbation(AllocationMatrix allocation, double[,] cost)
-        : this(allocation, new Matrix<double>(cost)) { }
-
     public bool TryPerturb(int pntCount)
     {
+        using var _ = Profiler?.Measure(Stages.Total) ?? Profiler.NoOp();
         Debug.Assert(pntCount > 0);
         if (pntCount <= 0)
             return true;
@@ -47,11 +49,13 @@ class EpsilonPerturbation
         {
             do
             {
-                using (Profiler.Measure("seq, argmin"))
+                using (Profiler?.Measure(Stages.Argmin) ?? Profiler.NoOp())
                     pntMin = ArgminCostInCheckList();
                 if (pntMin is null) // all non basic cells were tried
                     return false;
-                cycle = cs.SearchClosed(pntMin.Value);
+
+                using (Profiler?.Measure(Stages.CycleSearch) ?? Profiler.NoOp())
+                    cycle = CycleSearcher.SearchClosed(pntMin.Value);
                 if (cycle is not null)
                 { // dont check points that are known to have cycle
                     toCheck[pntMin.Value] = false;
@@ -64,7 +68,7 @@ class EpsilonPerturbation
         return true;
     }
 
-    private Point? ArgminCostInCheckList()
+    protected virtual Point? ArgminCostInCheckList()
     {
         Point? pnt = null;
         double costMin = double.PositiveInfinity;

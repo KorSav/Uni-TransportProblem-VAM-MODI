@@ -1,114 +1,51 @@
-using System.Diagnostics;
-using Profiling;
 using TpSolver.CycleSearch;
 using TpSolver.Shared;
+using TpSolver.Utils;
 
 namespace TpSolver.Perturbation;
 
-class EpsilonPerturbationParallel
+class EpsilonPerturbationParallel : EpsilonPerturbation
 {
-    private readonly AllocationMatrix allocation;
-    private readonly Matrix<double> cost;
-    private readonly CycleSearcherParallel cs;
-    private readonly Matrix<bool> toCheck;
-    private readonly int m;
-    private readonly int n;
+    public override CycleSearcher CycleSearcher { get; set; }
     private readonly int parDeg;
-    private readonly Point?[] localMins;
-
-    public Profiler CycleProfiler { get; }
-    public Profiler Profiler { get; }
 
     public EpsilonPerturbationParallel(
         AllocationMatrix allocation,
         Matrix<double> cost,
         int parallelizationDegree
     )
+        : base(allocation, cost)
     {
-        this.allocation = allocation;
+        CycleSearcher = new CycleSearcherParallel(allocation, parallelizationDegree);
         parDeg = parallelizationDegree;
-        m = allocation.NRows;
-        n = allocation.NCols;
-        CycleProfiler = new();
-        cs = new(this.allocation, parDeg) { Profiler = CycleProfiler };
-        this.cost = cost;
-        toCheck = new bool[m, n];
-        localMins = new Point?[parDeg];
-        Profiler = new();
     }
 
-    public bool TryPerturb(int pntCount)
+    protected override Point? ArgminCostInCheckList()
     {
-        Debug.Assert(pntCount > 0);
-        if (pntCount <= 0)
-            return false;
-
-        toCheck.Fill((p) => !allocation[p].IsBasic);
-        Point? pntMin;
-        List<Point>? cycle = null;
-        int perturbedCount = 0;
-        int cyclesFound = 0;
-        for (; perturbedCount < pntCount; perturbedCount++)
-        {
-            do
-            {
-                using (Profiler.Measure("par, argmin"))
-                    pntMin = ArgminCostInCheckList();
-                if (pntMin is null) // all non basic cells were tried
-                    return false;
-                cycle = cs.SearchClosed(pntMin.Value);
-                if (cycle is not null)
-                { // dont check points that are known to have cycle
-                    toCheck[pntMin.Value] = false;
-                    cyclesFound++;
-                }
-            } while (cycle is not null);
-            allocation[pntMin.Value] = allocation[pntMin.Value].ToBasic();
-            toCheck[pntMin.Value] = false;
-        }
-        return true;
-    }
-
-    private Point? ArgminCostInCheckList()
-    {
-        Task[] tasks = new Task[parDeg];
-        int baseChunkSize = m * n / tasks.Length;
-        int residue = m * n % tasks.Length;
-        int curI = 0;
-        for (int i = 0; i < tasks.Length; i++)
-        {
-            int chunkSize = baseChunkSize + (i < residue ? 1 : 0);
-            int iFrom = curI;
-            int iTo = curI + chunkSize;
-            curI = iTo;
-            int taskIndex = i;
-            tasks[i] = Task.Run(() => UpdateArgminInRange(taskIndex, iFrom, iTo));
-        }
+        var tasks = new Task<Point?>[parDeg];
+        if (!tasks.TryRunDistributedRange(0, m * n, ArgminCostToCheckInRange))
+            return ArgminCostToCheckInRange(0, m * n) ?? new(-1, -1); // should never be null
         Task.WaitAll(tasks);
-        Point? globalMin = localMins[0];
-        for (int i = 0; i < localMins.Length; i++)
-        {
-            if (localMins[i] is null)
-                continue;
-            if (globalMin is null)
-            {
-                globalMin = localMins[i];
-                continue;
-            }
-            if (
-                cost[localMins[i]!.Value] < cost[globalMin.Value]
-                || (cost[localMins[i]!.Value] == cost[globalMin.Value] && localMins[i] < globalMin)
-            )
-                globalMin = localMins[i];
-        }
+        Point? globalMin = null;
+        foreach (var task in tasks)
+            globalMin = Min(globalMin, task.Result);
         return globalMin;
     }
 
-    private void UpdateArgminInRange(int iLocalMin, int fromInc, int toExc)
+    private Point? Min(Point? a, Point? b)
+    {
+        if (a is null)
+            return b;
+        if (b is null)
+            return a;
+        return (cost[a.Value] < cost[b.Value] || cost[a.Value] == cost[b.Value] && a < b) ? a : b;
+    }
+
+    private Point? ArgminCostToCheckInRange(int fromInc, int toExc)
     {
         Point? min = null;
         double costMin = double.PositiveInfinity;
-        for (int compound = fromInc + 1; compound < toExc; compound++)
+        for (int compound = fromInc; compound < toExc; compound++)
         {
             int i = compound / n;
             int j = compound % n;
@@ -119,6 +56,6 @@ class EpsilonPerturbationParallel
                 min = new(i, j);
             }
         }
-        localMins[iLocalMin] = min;
+        return min;
     }
 }

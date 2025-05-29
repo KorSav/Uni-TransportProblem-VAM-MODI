@@ -27,14 +27,16 @@ public class CycleSearcherTests
         int perturbCount = actual.NRows + actual.NCols - 1 - actual.Count(a => a.IsBasic);
 
         var ep = new EpsilonPerturbation(expected, degenerousTp.Cost);
+        ep.CycleSearcher.Profiler = new();
         var isSeqSuccess = ep.TryPerturb(perturbCount);
 
         var ep2 = new EpsilonPerturbationParallel(actual, degenerousTp.Cost, 6);
+        ep2.CycleSearcher.Profiler = new();
         var isParSuccess = ep2.TryPerturb(perturbCount);
 
         Assert.Equal(isSeqSuccess, isParSuccess);
-        var seqT = ep.CycleProfiler[Stages.Total].Elapsed;
-        var parT = ep2.CycleProfiler[Stages.Total].Elapsed;
+        var seqT = ep.CycleSearcher.Profiler[Stages.Total].Elapsed;
+        var parT = ep2.CycleSearcher.Profiler[Stages.Total].Elapsed;
         var speedup = seqT / parT;
 
         var costSeq = expected.CalcTotalCost(degenerousTp.Cost);
@@ -44,6 +46,5 @@ public class CycleSearcherTests
         Assert.Equal(expected.AsEnumerableNBDistinct(), actual.AsEnumerableNBDistinct());
         Assert.True(speedup > 1.2, $"Speedup is too small - {speedup}");
         Console.WriteLine($"[Perf cycle search] Size={size}, S={speedup}");
-        var orderedTimings = ep2.CycleProfiler.OrderByDescending(sm => sm.Elapsed);
     }
 }
