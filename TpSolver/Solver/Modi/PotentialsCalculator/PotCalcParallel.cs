@@ -2,46 +2,39 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using TpSolver.Shared;
 
-namespace TpSolver.Solver.Modi;
+namespace TpSolver.Solver.Modi.PotentialsCalculator;
 
-class PotentialsCalculatorParallel(
+class PotCalcParallel(
     Matrix<double> cost,
     AllocationMatrix allocation,
     double[] RPotential,
     double[] CPotential,
     int parDeq
-)
+) : PotCalcBase(cost, allocation, RPotential, CPotential)
 {
-    readonly AllocationMatrix allocation = allocation;
-    readonly Matrix<double> cost = cost;
-
-    readonly int m = RPotential.Length;
-    readonly double[] RPotential = RPotential;
     readonly ConcurrentBag<int> RDone = [];
-
-    readonly int n = CPotential.Length;
-    readonly double[] CPotential = CPotential;
     readonly ConcurrentBag<int> CDone = [];
 
     SemaphoreSlim semaphore = new(0);
     readonly int parDeg = parDeq;
     volatile bool isCalcEnded = false;
     volatile int cntWorkRemain;
-    volatile int cntNextWork = 0;
+    volatile int cntNextWork;
     volatile bool isRowIndex;
     ConcurrentQueue<int> toCheck = new();
 
-    /// <summary>
-    /// Starts with RPotential[0] = 0
-    /// </summary>
-    public void CalcPotentials()
+    protected override void CalcPotentialsFrom(int idx, bool isRPotential)
     {
         RDone.Clear();
         CDone.Clear();
-        RDone.Add(0);
+        if (isRPotential)
+            RDone.Add(idx);
+        else
+            CDone.Add(idx);
+
         toCheck = new();
-        toCheck.Enqueue(0);
-        isRowIndex = true;
+        toCheck.Enqueue(idx);
+        isRowIndex = isRPotential;
 
         semaphore = new(1);
         cntWorkRemain = 1;

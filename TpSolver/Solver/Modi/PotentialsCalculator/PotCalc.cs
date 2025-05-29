@@ -1,43 +1,37 @@
 using System.Diagnostics;
 using TpSolver.Shared;
 
-namespace TpSolver.Solver.Modi;
+namespace TpSolver.Solver.Modi.PotentialsCalculator;
 
-class PotentialsCalculator(
+class PotCalc(
     Matrix<double> cost,
     AllocationMatrix allocation,
     double[] RPotential,
     double[] CPotential
-)
+) : PotCalcBase(cost, allocation, RPotential, CPotential)
 {
-    readonly AllocationMatrix allocation = allocation;
-    readonly Matrix<double> cost = cost;
-
-    readonly int m = RPotential.Length;
-    readonly double[] RPotential = RPotential;
     readonly bool[] RDone = new bool[RPotential.Length];
-
-    readonly int n = CPotential.Length;
-    readonly double[] CPotential = CPotential;
     readonly bool[] CDone = new bool[CPotential.Length];
+    readonly Queue<int> toCheck = new(RPotential.Length + CPotential.Length);
 
-    /// <summary>
-    /// Starts with RPotential[0] = 0
-    /// </summary>
-    public void CalcPotentials()
+    protected override void CalcPotentialsFrom(int idx, bool isRPotential)
     {
         // clear done lists - to allow multiple calls
         for (int i = 0; i < m; i++)
             RDone[i] = false;
+        if (isRPotential)
+            RDone[idx] = true;
+
         for (int j = 0; j < n; j++)
             CDone[j] = false;
+        if (!isRPotential)
+            CDone[idx] = true;
 
-        RDone[0] = true;
-        Queue<int> toCheck = new(m + n);
-        toCheck.Enqueue(0);
-        while (toCheck.TryDequeue(out int idx))
+        toCheck.Clear();
+        toCheck.Enqueue(isRPotential ? idx : idx + m);
+        while (toCheck.TryDequeue(out idx))
         {
-            bool isRPotential = idx < m;
+            isRPotential = idx < m;
             List<int> calculated = isRPotential
                 ? CalcAllNotCDoneUsing(idx)
                 : CalcAllNotRDoneUsing(idx - m);

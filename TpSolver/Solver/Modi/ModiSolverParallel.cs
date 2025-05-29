@@ -4,6 +4,7 @@ using TpSolver.BfsSearch;
 using TpSolver.CycleSearch;
 using TpSolver.Perturbation;
 using TpSolver.Shared;
+using TpSolver.Solver.Modi.PotentialsCalculator;
 using TpSolver.Utils;
 
 namespace TpSolver.Solver.Modi;
@@ -34,7 +35,7 @@ public class ModiSolverParallel(TransportProblem tp, ParallelOptions parallelOpt
             if (!perturbation.TryPerturb(perturbCount))
                 return null;
         }
-        PotentialsCalculatorParallel pc = new(
+        PotCalcParallel pc = new(
             tp.Cost,
             sln,
             RPotential,

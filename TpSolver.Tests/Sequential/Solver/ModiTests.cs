@@ -1,6 +1,7 @@
 using TpSolver.BfsSearch;
 using TpSolver.Shared;
 using TpSolver.Solver.Modi;
+using TpSolver.Solver.Modi.PotentialsCalculator;
 using TpSolver.Tests.Utils;
 
 namespace TpSolver.Tests.Solver;
@@ -32,7 +33,7 @@ public class ModiTests
         double[] RPotential = new double[4];
         double[] CPotential = new double[4];
 
-        PotentialsCalculator pc = new(cost, am, RPotential, CPotential);
+        PotCalc pc = new(cost, am, RPotential, CPotential);
         pc.CalcPotentials();
 
         Assert.Equal(RExpected, RPotential);
@@ -62,7 +63,7 @@ public class ModiTests
         double[] RPotential = new double[3];
         double[] CPotential = new double[4];
 
-        PotentialsCalculator pc = new(cost, am, RPotential, CPotential);
+        PotCalc pc = new(cost, am, RPotential, CPotential);
         pc.CalcPotentials();
 
         Assert.Equal(RExpected, RPotential);

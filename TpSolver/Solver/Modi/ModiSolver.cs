@@ -4,6 +4,7 @@ using TpSolver.BfsSearch;
 using TpSolver.CycleSearch;
 using TpSolver.Perturbation;
 using TpSolver.Shared;
+using TpSolver.Solver.Modi.PotentialsCalculator;
 
 namespace TpSolver.Solver.Modi;
 
@@ -32,7 +33,7 @@ public class ModiSolver(TransportProblem tp)
             if (!perturbation.TryPerturb(perturbCount))
                 return null;
         }
-        PotentialsCalculator pc = new(tp.Cost, sln, RPotential, CPotential);
+        PotCalc pc = new(tp.Cost, sln, RPotential, CPotential);
         CycleSearcher cs = new(sln);
         double min;
         Point pnt_min;
